@@ -7,12 +7,12 @@
 
 import math
 
-from PyQt4 import QtCore, QtGui
+from AnyQt import QtCore, QtGui, QtWidgets
 
 def nyi():
     print 'Not yet implemented'
 
-class Button(QtGui.QToolButton):
+class Button(QtWidgets.QToolButton):
     def __init__(self, text, parent=None):
         super(Button, self).__init__(parent)
 
@@ -27,7 +27,7 @@ class Button(QtGui.QToolButton):
         return size
 
 
-class Calculator(QtGui.QDialog):
+class Calculator(QtWidgets.QDialog):
     """RPN calculator styled after the one in CoCreate SolidDesigner CAD."""
     mem = ''
     keip = False    # Flag set when keyboard entry is in progress

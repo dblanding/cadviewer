@@ -10,7 +10,6 @@ from OCC.GeomAPI import *
 from OCC.GeomLProp import *
 from OCC.BRepTools import breptools_UVBounds
 from OCC.TopAbs import TopAbs_REVERSED
-import OCCUtils.Construct
 import OCC.BRepGProp
 import OCC.GProp
 
@@ -361,7 +360,7 @@ class WorkPlane(object):
             self.plane = Geom_Plane(gpPlane)    # type: Geom_Plane
             self.surface = Handle_Geom_Surface(Geom_Plane(gpPlane)) # type: Handle_Geom_Surface
         elif face:  # create workplane on face, uDir defined by faceU
-            wDir = OCCUtils.Construct.face_normal(face)
+            wDir = Construct.face_normal(face)
             props = OCC.GProp.GProp_GProps()
             OCC.BRepGProp.brepgprop_SurfaceProperties(face, props)
             origin = props.CentreOfMass()

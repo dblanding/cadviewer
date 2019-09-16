@@ -34,8 +34,9 @@ from itertools import islice
 import treelib
 import workplane
 import rpnCalculator
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from AnyQt.QtCore import *
+from AnyQt.QtGui import *
+from AnyQt.QtWidgets import *
 from OCC.AIS import AIS_Shape
 from OCC.BRep import *
 from OCC.BRepAdaptor import *
@@ -69,7 +70,7 @@ from OCC.IFSelect import IFSelect_RetDone
 from OCCUtils import Construct, Topology
 from OCC.IGESControl import *
 from OCC.STEPControl import STEPControl_Writer, STEPControl_AsIs
-import myStepXcafReader
+#import myStepXcafReader
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 from OCC import VERSION
@@ -100,8 +101,8 @@ class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"),
-                     self.contextMenu)
+        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
+        #self.contextMenu.completed.connect(
         self.popMenu = QMenu(self)
 
     def contextMenu(self, point):
@@ -161,7 +162,8 @@ class MainWindow(QMainWindow):
         apply(QMainWindow.__init__,(self,)+args)
         self.canva = qtDisplay.qtViewer3d(self)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
+        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
+        #self.completed.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using pythonOCC-%s ('qt' backend)"%VERSION)
         self.resize(960,720)
@@ -201,7 +203,8 @@ class MainWindow(QMainWindow):
         self.currOpLabel.setText("Current Operation: %s " % self.registeredCallback)
         self.lineEdit = QLineEdit()
         self.lineEditStack = [] # list of user inputs
-        self.connect(self.lineEdit, SIGNAL("returnPressed()"), self.appendToStack)
+        #self.connect(self.lineEdit, SIGNAL("returnPressed()"), self.appendToStack)
+        #self.lineEdit.completed.connect(self.appendToStack)
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         status.addPermanentWidget(self.lineEdit)
