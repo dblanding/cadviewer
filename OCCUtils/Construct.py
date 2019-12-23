@@ -27,13 +27,13 @@ import warnings
 import operator
 import math
 
-from OCC.BRep import BRep_Tool
-from OCC.BRepAdaptor import BRepAdaptor_HCurve
-from OCC.BRepOffset import BRepOffset_Skin
-from OCC.Geom import Geom_TrimmedCurve
-from OCC.GeomConvert import GeomConvert_ApproxCurve
-from OCC.GeomLProp import GeomLProp_SLProps
-from OCC.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
+from OCC.Core.BRep import BRep_Tool
+from OCC.Core.BRepAdaptor import BRepAdaptor_HCurve
+from OCC.Core.BRepOffset import BRepOffset_Skin
+from OCC.Core.Geom import Geom_TrimmedCurve
+from OCC.Core.GeomConvert import GeomConvert_ApproxCurve
+from OCC.Core.GeomLProp import GeomLProp_SLProps
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
                                 BRepBuilderAPI_Transform,
                                 BRepBuilderAPI_Sewing,
                                 BRepBuilderAPI_MakePolygon,
@@ -44,16 +44,16 @@ from OCC.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
                                 BRepBuilderAPI_MakeEdge,
                                 BRepBuilderAPI_MakeVertex,
                                 BRepBuilderAPI_FindPlane)
-from OCC.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism)
-from OCC.BRepOffsetAPI import BRepOffsetAPI_MakeEvolved
-from OCC.GeomAbs import (GeomAbs_Arc, GeomAbs_C2, GeomAbs_C0, GeomAbs_Tangent,
+from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism)
+from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeEvolved
+from OCC.Core.GeomAbs import (GeomAbs_Arc, GeomAbs_C2, GeomAbs_C0, GeomAbs_Tangent,
                          GeomAbs_Intersection, GeomAbs_G1, GeomAbs_G2,
                          GeomAbs_C1)
-from OCC.TopAbs import TopAbs_REVERSED
-from OCC.TopoDS import (TopoDS_Wire, TopoDS_Solid, TopoDS_Vertex, TopoDS_Shape,
+from OCC.Core.TopAbs import TopAbs_REVERSED
+from OCC.Core.TopoDS import (TopoDS_Wire, TopoDS_Solid, TopoDS_Vertex, TopoDS_Shape,
                         TopoDS_Builder, TopoDS_Compound)
-from OCC.TColgp import TColgp_SequenceOfVec, TColgp_HArray1OfPnt
-from OCC.gp import (gp_Vec, gp_Pnt, gp_Dir, gp_Trsf, gp_Ax1, gp_Quaternion,
+from OCC.Core.TColgp import TColgp_SequenceOfVec, TColgp_HArray1OfPnt
+from OCC.Core.gp import (gp_Vec, gp_Pnt, gp_Dir, gp_Trsf, gp_Ax1, gp_Quaternion,
                     gp_Circ, gp_Pln)
 
 from OCCUtils.Common import (TOLERANCE, assert_isdone, to_tcol_, to_adaptor_3d,
@@ -336,7 +336,7 @@ def make_evolved(spine, profile):
 
 
 def make_pipe(spine, profile):
-    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
+    from OCC.Core.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
     pipe = BRepOffsetAPI_MakePipe(spine, profile)
     with assert_isdone(pipe, 'failed building pipe'):
         pipe.Build()
@@ -360,7 +360,7 @@ def make_offset_shape(shapeToOffset, offsetDistance, tolerance=TOLERANCE,
     builds an offsetted shell from a shape
     construct an offsetted version of the shape
     '''
-    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
+    from OCC.Core.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
     try:
         offset = BRepOffsetAPI_MakeOffsetShape(shapeToOffset,
                                                offsetDistance,
@@ -392,7 +392,7 @@ def make_offset(wire_or_face, offsetDistance, altitude=0, joinType=GeomAbs_Arc):
     note: a shape that has a negative offsetDistance will return
     a sharp corner
     '''
-    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffset
+    from OCC.Core.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffset
     _joints = [GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection]
     assert joinType in _joints, '%s is not one of %s' % (joinType, _joints)
     try:
@@ -407,7 +407,7 @@ def make_offset(wire_or_face, offsetDistance, altitude=0, joinType=GeomAbs_Arc):
 
 
 def make_loft(elements, ruled=False, tolerance=TOLERANCE, continuity=GeomAbs_C2, check_compatibility=True):
-    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+    from OCC.Core.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
     sections = BRepOffsetAPI_ThruSections(False, ruled, tolerance)
     for i in elements:
         if isinstance(i, TopoDS_Wire):
@@ -427,7 +427,7 @@ def make_loft(elements, ruled=False, tolerance=TOLERANCE, continuity=GeomAbs_C2,
 
 
 def make_ruled(edgeA, edgeB):
-    from OCC.Core.BRepFill import brepfill_Face
+    from OCC.Core.Core.BRepFill import brepfill_Face
     return brepfill_Face(edgeA, edgeB)
 
 
@@ -461,7 +461,7 @@ def make_oriented_box(v_corner, v_x, v_y, v_z):
     :param v_z: gp_Vec that describes the Z-axis
     :return: TopoDS_Solid
     """
-    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
+    from OCC.Core.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
     verts = map(lambda x: x.as_pnt(), [v_corner, v_corner+v_x, v_corner+v_x+v_y, v_corner+v_y])
     p = make_polygon(verts, closed=True)
     li = make_line(v_corner.as_pnt(), (v_corner+v_z).as_pnt())
@@ -508,7 +508,7 @@ def make_n_sided(edges, points, continuity=GeomAbs_C0):
     :param continuity: GeomAbs_0, 1, 2
     :return: TopoDS_Face
     """
-    from OCC.Core.BRepFill import BRepFill_Filling
+    from OCC.Core.Core.BRepFill import BRepFill_Filling
     n_sided = BRepFill_Filling()
     for edg in edges:
         n_sided.Add(edg, continuity)
@@ -520,8 +520,8 @@ def make_n_sided(edges, points, continuity=GeomAbs_C0):
 
 
 def make_n_sections(edges):
-    from OCC.Core.TopTools import TopTools_SequenceOfShape
-    from OCC.Core.BRepFill import BRepFill_NSections
+    from OCC.Core.Core.TopTools import TopTools_SequenceOfShape
+    from OCC.Core.Core.BRepFill import BRepFill_NSections
     seq = TopTools_SequenceOfShape()
     for i in edges:
         seq.Append(i)
@@ -530,7 +530,7 @@ def make_n_sections(edges):
 
 
 def make_coons(edges):
-    from OCC.GeomFill import GeomFill_BSplineCurves, GeomFill_StretchStyle
+    from OCC.Core.GeomFill import GeomFill_BSplineCurves, GeomFill_StretchStyle
     if len(edges) == 4:
         spl1, spl2, spl3, spl4 = edges
         srf = GeomFill_BSplineCurves(spl1, spl2, spl3, spl4, GeomFill_StretchStyle)
@@ -549,8 +549,8 @@ def make_constrained_surface_from_edges(edges):
     '''
     DOESNT RESPECT BOUNDARIES
     '''
-    from OCC.GeomPlate import GeomPlate_MakeApprox, GeomPlate_BuildPlateSurface
-    from OCC.Core.BRepFill import BRepFill_CurveConstraint
+    from OCC.Core.GeomPlate import GeomPlate_MakeApprox, GeomPlate_BuildPlateSurface
+    from OCC.Core.Core.BRepFill import BRepFill_CurveConstraint
     bpSrf = GeomPlate_BuildPlateSurface(3, 15, 2)
     for edg in edges:
         c = BRepAdaptor_HCurve()
@@ -606,7 +606,7 @@ def sew_shapes(shapes, tolerance=0.001):
 
 
 def boolean_cut(shapeToCutFrom, cuttingShape):
-    from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+    from OCC.Core.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
     try:
         cut = BRepAlgoAPI_Cut(shapeToCutFrom, cuttingShape)
         print("Can work?", cut.BuilderCanWork())
@@ -631,7 +631,7 @@ def boolean_cut(shapeToCutFrom, cuttingShape):
 
 
 def boolean_fuse(shapeToCutFrom, joiningShape):
-    from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
+    from OCC.Core.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
     join = BRepAlgoAPI_Fuse(shapeToCutFrom, joiningShape)
     join.RefineEdges()
     join.FuseEdges()
@@ -665,7 +665,7 @@ def trim_wire(wire, shapeLimit1, shapeLimit2, periodic=False):
 
 
 def fix_shape(shp, tolerance=1e-3):
-    from OCC.ShapeFix import ShapeFix_Shape
+    from OCC.Core.ShapeFix import ShapeFix_Shape
     fix = ShapeFix_Shape(shp)
     fix.SetFixFreeShellMode(True)
     sf = fix.FixShellTool().GetObject()
@@ -676,7 +676,7 @@ def fix_shape(shp, tolerance=1e-3):
 
 
 def fix_face(shp, tolerance=1e-3):
-    from OCC.ShapeFix import ShapeFix_Face
+    from OCC.Core.ShapeFix import ShapeFix_Face
     fix = ShapeFix_Face(shp)
     fix.SetMaxTolerance(tolerance)
     fix.Perform()
@@ -766,7 +766,7 @@ def rotate(brep, axe, degree, copy=False):
 
 
 def face_normal(face):
-    from OCC.Core.BRepTools import breptools_UVBounds
+    from OCC.Core.Core.BRepTools import breptools_UVBounds
     umin, umax, vmin, vmax = breptools_UVBounds(face)
     surf = BRep_Tool().Surface(face)
     props = GeomLProp_SLProps(surf, (umin+umax)/2., (vmin+vmax)/2., 1, TOLERANCE)
@@ -777,7 +777,7 @@ def face_normal(face):
 
 
 def face_from_plane(_geom_plane, lowerLimit=-1000, upperLimit=1000):
-    from OCC.Geom import Geom_RectangularTrimmedSurface
+    from OCC.Core.Geom import Geom_RectangularTrimmedSurface
     _trim_plane = make_face(Geom_RectangularTrimmedSurface(_geom_plane.GetHandle(), lowerLimit, upperLimit, lowerLimit, upperLimit).GetHandle())
     return _trim_plane
 
@@ -798,7 +798,7 @@ def fit_plane_through_face_vertices(_face):
     :param _face:   OCC.KBE.face.Face instance
     :return:        Geom_Plane
     """
-    from OCC.GeomPlate import GeomPlate_BuildAveragePlane
+    from OCC.Core.GeomPlate import GeomPlate_BuildAveragePlane
 
     uvs_from_vertices = [_face.project_vertex(vertex2pnt(i)) for i in Topo(_face).vertices()]
     normals = [gp_Vec(_face.DiffGeom.normal(*uv[0])) for uv in uvs_from_vertices]
@@ -821,7 +821,7 @@ def project_edge_onto_plane(edg, plane):
     :param plane:   Geom_Plane
     :return:        TopoDS_Edge projected on the plane
     """
-    from OCC.GeomProjLib import geomprojlib_ProjectOnPlane
+    from OCC.Core.GeomProjLib import geomprojlib_ProjectOnPlane
     proj = geomprojlib_ProjectOnPlane(edg.adaptor.Curve().Curve(), plane.GetHandle(), plane.Axis().Direction(), 1)
     return make_edge(proj)
 

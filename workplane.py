@@ -1,17 +1,17 @@
 import math
-from OCC.gp import *
-from OCC.GC import *
-from OCC.BRep import *
-from OCC.BRepBuilderAPI import *
-from OCC.GCE2d import *
-from OCC.Geom import *
-from OCC.Geom2d import *
-from OCC.GeomAPI import *
-from OCC.GeomLProp import *
-from OCC.BRepTools import breptools_UVBounds
-from OCC.TopAbs import TopAbs_REVERSED
-import OCC.BRepGProp
-import OCC.GProp
+from OCC.Core.gp import *
+from OCC.Core.GC import *
+from OCC.Core.BRep import *
+from OCC.Core.BRepBuilderAPI import *
+from OCC.Core.GCE2d import *
+from OCC.Core.Geom import *
+from OCC.Core.Geom2d import *
+from OCC.Core.GeomAPI import *
+from OCC.Core.GeomLProp import *
+from OCC.Core.BRepTools import breptools_UVBounds
+from OCC.Core.TopAbs import TopAbs_REVERSED
+import OCC.Core.BRepGProp
+import OCC.Core.GProp
 
 #===========================================================================
 # 

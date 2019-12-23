@@ -19,30 +19,30 @@
 
 import random
 
-from OCC.Bnd import Bnd_Box
-from OCC.BRepBndLib import brepbndlib_Add
-from OCC.TColgp import (TColgp_HArray1OfPnt,
+from OCC.Core.Bnd import Bnd_Box
+from OCC.Core.BRepBndLib import brepbndlib_Add
+from OCC.Core.TColgp import (TColgp_HArray1OfPnt,
                              TColgp_Array1OfPnt,
                              TColgp_Array1OfPnt2d,
                              TColgp_Array1OfVec)
-from OCC.TColStd import TColStd_HArray1OfBoolean
-from OCC.BRepAdaptor import (BRepAdaptor_Curve, BRepAdaptor_HCurve,
+from OCC.Core.TColStd import TColStd_HArray1OfBoolean
+from OCC.Core.BRepAdaptor import (BRepAdaptor_Curve, BRepAdaptor_HCurve,
                                   BRepAdaptor_CompCurve, BRepAdaptor_HCompCurve)
-from OCC.GeomAPI import (GeomAPI_Interpolate, GeomAPI_PointsToBSpline,
+from OCC.Core.GeomAPI import (GeomAPI_Interpolate, GeomAPI_PointsToBSpline,
                               GeomAPI_ProjectPointOnCurve)
-from OCC.gp import gp_Pnt, gp_Vec, gp_Trsf
-from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform
-from OCC.TopoDS import TopoDS_Edge, TopoDS_Shape, TopoDS_Wire, TopoDS_Vertex
-from OCC.Quantity import Quantity_Color, Quantity_TOC_RGB
-from OCC.GProp import GProp_GProps
-from OCC.GeomAbs import GeomAbs_C1, GeomAbs_C2, GeomAbs_C3
-from OCC.BRepGProp import (brepgprop_LinearProperties,
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Trsf
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
+from OCC.Core.TopoDS import TopoDS_Edge, TopoDS_Shape, TopoDS_Wire, TopoDS_Vertex
+from OCC.Core.Quantity import Quantity_Color, Quantity_TOC_RGB
+from OCC.Core.GProp import GProp_GProps
+from OCC.Core.GeomAbs import GeomAbs_C1, GeomAbs_C2, GeomAbs_C3
+from OCC.Core.BRepGProp import (brepgprop_LinearProperties,
                                 brepgprop_SurfaceProperties,
                                 brepgprop_VolumeProperties)
-from OCC.GeomAdaptor import GeomAdaptor_Curve
-from OCC.Geom import Geom_Curve
+from OCC.Core.GeomAdaptor import GeomAdaptor_Curve
+from OCC.Core.Geom import Geom_Curve
 
-from OCC import Graphic3d
+from OCC.Core import Graphic3d
 
 #===========================================================================
 # No PythonOCC dependencies...
@@ -112,7 +112,7 @@ def color(r, g, b):
 
 
 def to_string(_string):
-    from OCC.TCollection import TCollection_ExtendedString
+    from OCC.Core.TCollection import TCollection_ExtendedString
     return TCollection_ExtendedString(_string)
 
 
@@ -286,7 +286,7 @@ def random_color():
 
 
 def common_vertex(edg1, edg2):
-    from OCC.Core.TopExp import topexp_CommonVertex
+    from OCC.Core.Core.TopExp import topexp_CommonVertex
     vert = TopoDS_Vertex()
     if topexp_CommonVertex(edg1, edg2, vert):
         return vert
@@ -339,8 +339,8 @@ def point_in_solid(solid, pnt, tolerance=1e-5):
 
     Returns: bool
     """
-    from OCC.Core.BRepClass3d import BRepClass3d_SolidClassifier
-    from OCC.Core.TopAbs import TopAbs_ON, TopAbs_OUT, TopAbs_IN
+    from OCC.Core.Core.BRepClass3d import BRepClass3d_SolidClassifier
+    from OCC.Core.Core.TopAbs import TopAbs_ON, TopAbs_OUT, TopAbs_IN
     _in_solid = BRepClass3d_SolidClassifier(solid, pnt, tolerance)
     print("State", _in_solid.State())
     if _in_solid.State() == TopAbs_ON:
@@ -360,7 +360,7 @@ def intersection_from_three_planes(planeA, planeB, planeC):
     @param planeC:
     @param show:
     '''
-    from OCC.IntAna import IntAna_Int3Pln
+    from OCC.Core.IntAna import IntAna_Int3Pln
 
     planeA = planeA if not hasattr(planeA, 'Pln') else planeA.Pln()
     planeB = planeB if not hasattr(planeB, 'Pln') else planeB.Pln()
@@ -387,7 +387,7 @@ def intersect_shape_by_line(topods_shape, line, low_parameter=0.0, hi_parameter=
     and the u,v,w parameters of the intersection point
     :raise:
     """
-    from OCC.IntCurvesFace import IntCurvesFace_ShapeIntersector
+    from OCC.Core.IntCurvesFace import IntCurvesFace_ShapeIntersector
     shape_inter = IntCurvesFace_ShapeIntersector()
     shape_inter.Load(topods_shape, TOLERANCE)
     shape_inter.PerformNearest(line, low_parameter, hi_parameter)
@@ -414,12 +414,12 @@ def normal_vector_from_plane(plane, vec_length=1.):
 
 
 def fix_tolerance(shape, tolerance=TOLERANCE):
-    from OCC.ShapeFix import ShapeFix_ShapeTolerance
+    from OCC.Core.ShapeFix import ShapeFix_ShapeTolerance
     ShapeFix_ShapeTolerance().SetTolerance(shape, tolerance)
 
 
 def fix_continuity(edge, continuity=1):
-    from OCC.ShapeUpgrade import ShapeUpgrade_ShapeDivideContinuity
+    from OCC.Core.ShapeUpgrade import ShapeUpgrade_ShapeDivideContinuity
     su = ShapeUpgrade_ShapeDivideContinuity(edge)
     su.SetBoundaryCriterion(eval('GeomAbs_C'+str(continuity)))
     su.Perform()
@@ -433,7 +433,7 @@ def resample_curve_with_uniform_deflection(curve, deflection=0.5, degreeMin=3, d
     @param curve: TopoDS_Wire, TopoDS_Edge, curve
     @param n_samples:
     '''
-    from OCC.GCPnts import GCPnts_UniformDeflection
+    from OCC.Core.GCPnts import GCPnts_UniformDeflection
     crv = to_adaptor_3d(curve)
     defl = GCPnts_UniformDeflection(crv, deflection)
     with assert_isdone(defl, 'failed to compute UniformDeflection'):
@@ -497,7 +497,7 @@ def minimum_distance(shp1, shp2):
              minimum distance points on shp1
              minimum distance points on shp2
     '''
-    from OCC.BRepExtrema import BRepExtrema_DistShapeShape
+    from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
     bdss = BRepExtrema_DistShapeShape(shp1, shp2)
     bdss.Perform()
     with assert_isdone(bdss, 'failed computing minimum distances'):
@@ -512,7 +512,7 @@ def minimum_distance(shp1, shp2):
 def vertex2pnt(vertex):
     '''returns a gp_Pnt from a TopoDS_Vertex
     '''
-    from OCC.Core.BRep import BRep_Tool
+    from OCC.Core.Core.BRep import BRep_Tool
     return BRep_Tool.Pnt(vertex)
 
 
@@ -565,7 +565,7 @@ def project_point_on_plane(plane, point):
     @param plane: Geom_Plane
     @param point: gp_Pnt
     '''
-    from OCC.ProjLib import projlib_Project
+    from OCC.Core.ProjLib import projlib_Project
     pl = plane.Pln()
     aa, bb = projlib_Project(pl, point).Coord()
     point = plane.Value(aa, bb)
@@ -580,7 +580,7 @@ def wire_to_curve(wire, tolerance=TOLERANCE, order=GeomAbs_C2, max_segment=200, 
     '''
     adap = BRepAdaptor_CompCurve(wire)
     hadap = BRepAdaptor_HCompCurve(adap)
-    from OCC.Approx import Approx_Curve3d
+    from OCC.Core.Approx import Approx_Curve3d
     approx = Approx_Curve3d(hadap.GetHandle(), tolerance, order, max_segment, max_order)
     with assert_isdone(approx, 'not able to compute approximation from wire'):
         return approx.Curve().GetObject()

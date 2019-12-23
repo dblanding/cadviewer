@@ -31,64 +31,65 @@ import sys
 import os, os.path
 import math
 from itertools import islice
+from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
+                             QMenu, QDockWidget, QDesktopWidget, QToolButton,
+                             QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
+                             QToolBar, QFileDialog)
+from PyQt5.QtGui import QIcon
+from PyQt5 import QtGui
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 import treelib
 import workplane
-import rpnCalculator
-from AnyQt.QtCore import *
-from AnyQt.QtGui import *
-from AnyQt.QtWidgets import *
-from OCC.AIS import AIS_Shape
-from OCC.BRep import *
-from OCC.BRepAdaptor import *
-from OCC.BRepAlgoAPI import *
-from OCC.BRepBuilderAPI import *
-from OCC.BRepFeat import *
-from OCC.BRepFill import *
-from OCC.BRepFilletAPI import *
-from OCC.BRepLib import *
-from OCC.BRepPrimAPI import *
-from OCC.BRepOffsetAPI import *
-from OCC.gp import *
-from OCC.GC import *
-from OCC.Geom import *
-from OCC.Geom2d import *
-from OCC.GeomAPI import *
-from OCC.GeomLib import *
-from OCC.GCE2d import *
-from OCC.TopoDS import *
-from OCC.TopExp import *
-from OCC.TopAbs import *
-from OCC.TopTools import *
-from OCC.TopLoc import *
-from OCC.Standard import *
-from OCC.IntAna2d import *
-from OCC.CPnts import *
-from OCC.IntAna import IntAna_IntConicQuad
-from OCC.Precision import precision_Angular, precision_Confusion
-from OCC.Interface import Interface_Static_SetCVal
-from OCC.IFSelect import IFSelect_RetDone
+#import rpnCalculator
+from OCC.Core.AIS import AIS_Shape
+from OCC.Core.BRep import *
+from OCC.Core.BRepAdaptor import *
+from OCC.Core.BRepAlgoAPI import *
+from OCC.Core.BRepBuilderAPI import *
+from OCC.Core.BRepFeat import *
+from OCC.Core.BRepFill import *
+from OCC.Core.BRepFilletAPI import *
+from OCC.Core.BRepLib import *
+from OCC.Core.BRepPrimAPI import *
+from OCC.Core.BRepOffsetAPI import *
+from OCC.Core.gp import *
+from OCC.Core.GC import *
+from OCC.Core.Geom import *
+from OCC.Core.Geom2d import *
+from OCC.Core.GeomAPI import *
+from OCC.Core.GeomLib import *
+from OCC.Core.GCE2d import *
+from OCC.Core.TopoDS import *
+from OCC.Core.TopExp import *
+from OCC.Core.TopAbs import *
+from OCC.Core.TopTools import *
+from OCC.Core.TopLoc import *
+from OCC.Core.Standard import *
+from OCC.Core.IntAna2d import *
+from OCC.Core.CPnts import *
+from OCC.Core.IntAna import IntAna_IntConicQuad
+from OCC.Core.Precision import precision_Angular, precision_Confusion
+from OCC.Core.Interface import Interface_Static_SetCVal
+from OCC.Core.IFSelect import IFSelect_RetDone
 from OCCUtils import Construct, Topology
-from OCC.IGESControl import *
-from OCC.STEPControl import STEPControl_Writer, STEPControl_AsIs
-#import myStepXcafReader
+from OCC.Core.IGESControl import *
+from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
+import myStepXcafReader
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 from OCC import VERSION
-print "OCC version: %s" % VERSION
+print("OCC version: %s" % VERSION)
 
-# 'used_backend' needs to be defined prior to importing qtViewer3D
-if VERSION < "0.16.5":
-    used_backend = OCC.Display.backend.get_backend()
-elif VERSION == "0.16.5":
-    used_backend = OCC.Display.backend.load_backend()
-else:
-    used_backend = OCC.Display.backend.load_backend()
-    print "OCC Version = %s" % OCC.VERSION
+print(dir(AIS_Shape))
+
+used_backend = OCC.Display.backend.load_backend()
+print("OCC Version = %s" % OCC.VERSION)
 from OCC.Display import qtDisplay
 
 TOL = 1e-7 # Linear Tolerance
 ATOL = TOL # Angular Tolerance
-print 'TOLERANCE = ', TOL
+print('TOLERANCE = ', TOL)
 
 class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
     """ Display assembly structure
@@ -159,23 +160,16 @@ class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
 
 class MainWindow(QMainWindow):
     def __init__(self, *args):
-        apply(QMainWindow.__init__,(self,)+args)
+        super().__init__()
         self.canva = qtDisplay.qtViewer3d(self)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.setContextMenuPolicy(Qt.CustomContextMenu)
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
         #self.completed.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using pythonOCC-%s ('qt' backend)"%VERSION)
         self.resize(960,720)
         self.setCentralWidget(self.canva)
-        self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
-        self.treeDockWidget.setObjectName("treeDockWidget")
-        self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
-        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
-        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
-        #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
-        self.treeDockWidget.setWidget(self.asyPrtTree)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
+        self.createDockWidget()
         self.wpToolBar = QToolBar("2D")
         self.addToolBar(Qt.RightToolBarArea, self.wpToolBar)
         self.wpToolBar.setMovable(True)
@@ -228,7 +222,7 @@ class MainWindow(QMainWindow):
         self.drawList = [] # list of part uid's to be displayed
         self.tree = treelib.Tree()  # Assy/Part Structure (model)
         self.tree.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
-        itemName = QStringList(['/', str(0)])
+        itemName = ['/', str(0)]
         self.asyPrtTreeRoot = QTreeWidgetItem(self.asyPrtTree, itemName)    # Root Item in TreeView
         self.asyPrtTree.expandItem(self.asyPrtTreeRoot)
         self.itemClicked = None   # TreeView item that has been mouse clicked
@@ -239,7 +233,17 @@ class MainWindow(QMainWindow):
         self.shapeStack = []  # storage stack for shape picks
         self.context = None
         self.calculator = None
-        
+
+    def createDockWidget(self):
+        self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
+        self.treeDockWidget.setObjectName("treeDockWidget")
+        self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
+        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
+        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
+        #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
+        self.treeDockWidget.setWidget(self.asyPrtTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
+
     ####  PyQt menuBar & general methods:
 
     def centerOnScreen (self):
@@ -261,7 +265,7 @@ class MainWindow(QMainWindow):
             # if not, the "exit" action is now shown...
             # Qt is trying so hard to be native cocoa'ish that its a nuisance
             _action.setMenuRole(QAction.NoRole)
-            self.connect(_action, SIGNAL("triggered()"), _callable)
+            _action.triggered.connect(_callable)
             self._menus[menu_name].addAction(_action)
         except KeyError:
             raise ValueError('the menu item %s does not exist' % (menu_name))
@@ -281,7 +285,7 @@ class MainWindow(QMainWindow):
 
     def getPartsInAssy(self, uid):
         if uid not in self._assyDict.keys():
-            print "This node is not an assembly"
+            print("This node is not an assembly")
         else:
             asyPrtTree = []
             leafNodes = self.tree.leaves(uid)
@@ -409,7 +413,7 @@ class MainWindow(QMainWindow):
             self.unitsLabel.setText("Units: %s " % self.units)
     
     def printCurrUID(self):
-        print self._currentUID
+        print(self._currentUID)
 
     def getNewPartUID(self, objct, name="", ancestor=0,
                       typ='p', color=None):
@@ -440,9 +444,9 @@ class MainWindow(QMainWindow):
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
             if color:   # OCC.Quantity.Quantity_Color()
-                c = OCC.Display.OCCViewer.color(color.Red(), color.Green(), color.Blue())
+                c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
-                c = OCC.Display.OCCViewer.color(.2,.1,.1)   # default color
+                c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
@@ -471,7 +475,7 @@ class MainWindow(QMainWindow):
             self.activeWpUID = uid
         self._nameDict[uid] = name
         # add item to treeView
-        itemName = QStringList([name, str(uid)])
+        itemName = [name, str(uid)]
         item = QTreeWidgetItem(self.asyPrtTreeRoot, itemName)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
@@ -496,7 +500,7 @@ class MainWindow(QMainWindow):
             self.lineEditStack.append(str(value))
             cb([])  # call self.registeredCallback with arg=empty_list
         else:
-            print value
+            print(value)
 
     def clearStack(self):
         self.lineEditStack = []
@@ -533,7 +537,7 @@ class MainWindow(QMainWindow):
 
     def eraseAll(self):
         context = self.canva._display.Context
-        context.RemoveAll()
+        context.RemoveAll(True)
         self.drawList = []
         self.syncCheckedToDrawList()
     
@@ -541,12 +545,12 @@ class MainWindow(QMainWindow):
         if not self.context:
             context = self.canva._display.Context
             self.context = context
-            print 'initialized self.context'
+            print('initialized self.context')
         context = self.context
         if not self.registeredCallback:
             display.SetSelectionModeNeutral()
             context.SetAutoActivateSelection(False)
-        context.RemoveAll()
+        context.RemoveAll(True)
         for uid in self.drawList:
             if uid in self._partDict.keys():
                 if uid in self._transparencyDict.keys():
@@ -634,7 +638,7 @@ class MainWindow(QMainWindow):
         prompt = 'Select STEP file to import'
         fname = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
         if not fname:
-            print "Load step cancelled"
+            print("Load step cancelled")
             return
         fname = str(fname)
         name = os.path.basename(fname).split('.')[0]
@@ -674,9 +678,9 @@ class MainWindow(QMainWindow):
                 self._partDict[uid] = shape
                 self._nameDict[uid] = name
                 if color:
-                    c = OCC.Display.OCCViewer.color(color.Red(), color.Green(), color.Blue())
+                    c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
                 else:
-                    c = OCC.Display.OCCViewer.color(.2,.1,.1)   # default color
+                    c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
                 self._colorDict[uid] = c
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
@@ -694,7 +698,7 @@ class MainWindow(QMainWindow):
         prompt = 'Choose filename for step file.'
         fname = QFileDialog.getSaveFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
         if not fname:
-            print "Save step cancelled."
+            print("Save step cancelled.")
             return
         fname = str(fname)
         
@@ -779,8 +783,8 @@ def wpOnFace(initial=True):
         win.statusBar().showMessage(statusText)
         
 def wpOnFaceC(shapeList, *kwargs):  # callback (collector) for wpOnFace
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         face = topods_Face(shape)
         win.faceStack.append(face)
@@ -832,8 +836,8 @@ def clineH(initial=True):   # Horizontal construction line
         win.redraw()
         
 def clineHC(shapeList, *kwargs):  # callback (collector) for clineH
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -868,8 +872,8 @@ def clineV(initial=True):   # Vertical construction line
         win.redraw()
         
 def clineVC(shapeList, *kwargs):  # callback (collector) for clineV
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -904,8 +908,8 @@ def clineHV(initial=True):   # Horizontal + Vertical construction lines
         win.redraw()
         
 def clineHVC(shapeList, *kwargs):  # callback (collector) for clineHV
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -935,8 +939,8 @@ def cline2Pts(initial=True):
         win.redraw()
         
 def cline2PtsC(shapeList, *kwargs):  # callback (collector) for cline2Pts
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -981,8 +985,8 @@ def clineAng(initial=True):
             win.redraw()
 
 def clineAngC(shapeList, *kwargs):  # callback (collector) for clineAng
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -1017,8 +1021,8 @@ def clineLinBisec(initial=True):
         win.redraw()
         
 def clineLinBisecC(shapeList, *kwargs):  # callback (collector) for clineLinBisec
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -1063,8 +1067,8 @@ def makeWireCircle(initial=True):
         win.clearCallback()
         
 def makeWireCircleC(shapeList, *kwargs):  # callback (collector) for makeWireCircle
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -1134,8 +1138,8 @@ def distPtPt(initial=True):
         win.calculator.putx(dist)
         
 def distPtPtC(shapeList, *kwargs):  # callback (collector) for distPtPt
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -1157,8 +1161,8 @@ def edgeLen(initial=True):
         win.redraw()
         
 def edgeLenC(shapeList, *kwargs):  # callback (collector) for edgeLen
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         edge = topods_Edge(shape)
         win.edgeStack.append(edge)
@@ -1212,8 +1216,8 @@ def hole(initial=True):
         win.redraw()
 
 def holeC(shapeList, *kwargs):  # callback (collector) for hole
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     win.lineEdit.setFocus()
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
@@ -1246,8 +1250,8 @@ def fillet(initial=True):
         win.clearCallback()
         
 def filletC(shapeList, *kwargs):  # callback (collector) for fillet
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     win.lineEdit.setFocus()
     for shape in shapeList:
         edge = topods_Edge(shape)
@@ -1276,8 +1280,8 @@ def shell(initial=True):
         win.clearCallback()
 
 def shellC(shapeList, *kwargs):  # callback (collector) for shell
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     win.lineEdit.setFocus()
     for shape in shapeList:
         face = topods_Face(shape)
@@ -1310,8 +1314,8 @@ def lift(initial=True):
         win.clearCallback()
 
 def liftC(shapeList, *kwargs):  # callback (collector) for lift
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     win.lineEdit.setFocus()
     for shape in shapeList:
         face = topods_Face(shape)
@@ -1398,7 +1402,7 @@ def makeToolBody(mFace, workPart, tSurf):
     topo = Topology.Topo(workPart)
     mF_wires = topo.wires_from_face(mFace)
     if topo.number_of_wires_from_face(mFace) > 1:
-        print 'Not yet implemented for faces with holes.'
+        print('Not yet implemented for faces with holes.')
         return
     else: # Only one wire in mFace
         pass
@@ -1412,7 +1416,7 @@ def makeToolBody(mFace, workPart, tSurf):
     for edge in topo.ordered_edges_from_wire(mF_wire):
         mF_edgeList.append(edge)
         nrEdges += 1
-    print 'Number of edges on mFace = ', nrEdges
+    print('Number of edges on mFace = ', nrEdges)
 
     # make an ordered list of faces adjacent to mFace
     faces = topo.faces_from_solids(workPart) # all faces
@@ -1420,7 +1424,7 @@ def makeToolBody(mFace, workPart, tSurf):
     for face in faces:
         edges = topo.edges_from_face(face)
         if face.IsSame(mFace):
-            print 'Found mFace'
+            print('Found mFace')
         else:
             adjacentFace = False # assume face is not adjacent...
             for e in edges:
@@ -1433,7 +1437,7 @@ def makeToolBody(mFace, workPart, tSurf):
                 if adjacentFace:
                     break
             if adjacentFace:
-                print 'found adjacent face at sequence %i' % seq
+                print('found adjacent face at sequence %i' % seq)
                 adjFacesDict[seq] = face
     mF_adjFaceList = []
     for key in sorted(adjFacesDict):
@@ -1486,8 +1490,8 @@ def makeToolBody(mFace, workPart, tSurf):
                     except:
                         newPntList.append(Pnt)
         
-        print 'Length of mF_vrtxList= ', len(mF_vrtxList)
-        print 'Length of newPointList= ', len(newPntList)
+        print('Length of mF_vrtxList= ', len(mF_vrtxList))
+        print('Length of newPointList= ', len(newPntList))
         
         # make new side faces of toolBody
         newEdgeList = []
@@ -1500,7 +1504,7 @@ def makeToolBody(mFace, workPart, tSurf):
             if inters.IsDone():
                 nbLines = inters.NbLines()
                 if not nbLines:
-                    print 'Unable to find intersection with target plane'
+                    print('Unable to find intersection with target plane')
                     # Get this when trying to align a face on a 'toolBody' part
                 curve = inters.Line(nbLines) # type: Handle_Geom_curve
                 if nrEdges == 1: # Closed cylindrical face. Done!
@@ -1522,7 +1526,7 @@ def makeToolBody(mFace, workPart, tSurf):
                 
     # make new face on tPlane
     nrEdges = len(newEdgeList)
-    print 'Number of New Edges = ', nrEdges
+    print('Number of New Edges = ', nrEdges)
     if (nrEdges == 1):
         newWire = BRepBuilderAPI_MakeWire(newEdgeList[0]).Wire()
     else:
@@ -1589,7 +1593,7 @@ def tweak(mFace, tFace):
                 newPntList.append(intersectPnt(line, tPln))
                 break
 
-    print 'number of new points = ', len(newPntList)
+    print('number of new points = ', len(newPntList))
     '''
     for i in range(len(newPntList)):
         P = newPntList[i]
@@ -1645,7 +1649,7 @@ def tweak(mFace, tFace):
     # sew all the faces together
     sew = BRepBuilderAPI_Sewing(TOL)
     
-    print 'Number of other faces: ', len(otherFaces)
+    print('Number of other faces: ', len(otherFaces))
     for f in otherFaces:
         sew.Add(f)
     
@@ -1699,8 +1703,8 @@ def offsetFace(initial=True):
         win.clearCallback()
 
 def offsetFaceC(shapeList, *kwargs):  # callback (collector) for offsetFace
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     win.lineEdit.setFocus()
     for shape in shapeList:
         face = topods_Face(shape)
@@ -1735,8 +1739,8 @@ def alignFace(initial=True):
         win.clearCallback()
         
 def alignFaceC(shapeList, *kwargs):  # callback (collector) for alignFace
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         face = topods_Face(shape)
         win.faceStack.append(face)
@@ -1769,8 +1773,8 @@ def tweakFace(initial=True):
         win.clearCallback()
         
 def tweakFaceC(shapeList, *kwargs):  # callback (collector) for tweakFace
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         face = topods_Face(shape)
         win.faceStack.append(face)
@@ -1797,8 +1801,8 @@ def fuse(initial=True): # Fuse two parts
         win.clearCallback()
         
 def fuseC(shapeList, *kwargs):  # callback (collector) for fuse
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         win.shapeStack.append(shape)
     if len(win.shapeStack) == 1:
@@ -1824,8 +1828,8 @@ def remFace(initial=True): # remove face (of active part)
         
         # sew all the faces together
         sew = BRepBuilderAPI_Sewing(TOL)
-        print 'Number of faces to begin: ', topo.number_of_faces_from_solids(workPart)
-        print 'Number of faces after removal: ', len(faceList)
+        print('Number of faces to begin: ', topo.number_of_faces_from_solids(workPart))
+        print('Number of faces after removal: ', len(faceList))
         for f in faceList:
             sew.Add(f)
         sew.Perform()
@@ -1835,8 +1839,8 @@ def remFace(initial=True): # remove face (of active part)
         win.clearCallback()
         
 def remFaceC(shapeList, *kwargs):  # callback (collector) for remFace
-    print shapeList
-    print kwargs
+    print(shapeList)
+    print(kwargs)
     for shape in shapeList:
         face = topods_Face(shape)
         win.faceStack.append(face)
@@ -1958,7 +1962,7 @@ def mergePart(workPart=None):
                                 
     # Replace coplanar face pairs with merged faces
     if planarFaceRepairList:
-        print 'Number of faces to repair: ', len(planarFaceRepairList)
+        print('Number of faces to repair: ', len(planarFaceRepairList))
         for facePair, edge in planarFaceRepairList:
             for face in facePair:
                 faceList.remove(face)
@@ -2011,18 +2015,18 @@ def printActPart():
     uid = win.activePartUID
     if uid:
         name = win._nameDict[uid]
-        print "Active Part: %s [uid=%i]" % (name, int(uid))
+        print("Active Part: %s [uid=%i]" % (name, int(uid)))
     else:
-        print None
+        print(None)
 
 def clearPntStack():
     win.ptStack = []
 
 def printDrawList():
-    print "Draw List:", win.drawList
+    print("Draw List:", win.drawList)
 
 def printInSync():
-    print win.inSync()
+    print(win.inSync())
         
 def setUnits_in():
     win.setUnits('in')
@@ -2057,7 +2061,7 @@ win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
 win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
 win.add_menu('Utility')
 win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)    
-win.add_function_to_menu('Utility', "print current UID", win.printCurrUID)    
+win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)    
 win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)    
 win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
 win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 

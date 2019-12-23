@@ -28,23 +28,23 @@ from __future__ import print_function
 
 import logging
 import os.path
-import OCC.BRep
-import OCC.IFSelect
-import OCC.Interface
-import OCC.Quantity
-import OCC.STEPCAFControl
-import OCC.STEPControl
-import OCC.TDataStd
-import OCC.TCollection
-import OCC.TColStd
-import OCC.TDF
-import OCC.TDocStd
-import OCC.TopAbs
-import OCC.TopoDS
-import OCC.XCAFApp
-import OCC.XCAFDoc
-import OCC.XSControl
-import aocutils.topology
+import OCC.Core.BRep
+import OCC.Core.IFSelect
+import OCC.Core.Interface
+import OCC.Core.Quantity
+import OCC.Core.STEPCAFControl
+import OCC.Core.STEPControl
+import OCC.Core.TDataStd
+import OCC.Core.TCollection
+import OCC.Core.TColStd
+import OCC.Core.TDF
+import OCC.Core.TDocStd
+import OCC.Core.TopAbs
+import OCC.Core.TopoDS
+import OCC.Core.XCAFApp
+import OCC.Core.XCAFDoc
+import OCC.Core.XSControl
+#import aocutils.topology
 import treelib
 
 logger = logging.getLogger(__name__)
@@ -74,8 +74,8 @@ class StepXcafImporter(object):
 
     def getName(self, label):
         # Get the part name
-        h_name = OCC.TDataStd.Handle_TDataStd_Name()
-        label.FindAttribute(OCC.TDataStd.TDataStd_Name_GetID(), h_name)
+        h_name = OCC.Core.TDataStd.Handle_TDataStd_Name()
+        label.FindAttribute(OCC.Core.TDataStd.TDataStd_Name_GetID(), h_name)
         strdump = h_name.GetObject().DumpToString()
         name = strdump.split('|')[-2]
         return name
@@ -83,9 +83,9 @@ class StepXcafImporter(object):
     def getColor(self, shape):
         # Get the part color
         #string_seq = self.layer_tool.GetObject().GetLayers(shape)
-        color = OCC.Quantity.Quantity_Color()
+        color = OCC.Core.Quantity.Quantity_Color()
         self.color_tool.GetObject().GetColor(shape,
-                                             OCC.XCAFDoc.XCAFDoc_ColorSurf, color)
+                                             OCC.Core.XCAFDoc.XCAFDoc_ColorSurf, color)
         logger.debug("color: {0}, {1}, {2}".format(color.Red(),
                                                    color.Green(),
                                                    color.Blue()))
@@ -106,7 +106,7 @@ class StepXcafImporter(object):
             logger.debug("Is Component? %s" % self.shape_tool.IsComponent(cLabel))
             logger.debug("Is Simple Shape? %s" % self.shape_tool.IsSimpleShape(cLabel))
             logger.debug("Is Reference? %s" % self.shape_tool.IsReference(cLabel))
-            refLabel = OCC.TDF.TDF_Label()
+            refLabel = OCC.Core.TDF.TDF_Label()
             isRef = self.shape_tool.GetReferredShape(cLabel, refLabel)
             if isRef:
                 refShape = self.shape_tool.GetShape(refLabel)
@@ -132,7 +132,7 @@ class StepXcafImporter(object):
                                           {'a': False, 'l': None, 'c': color, 's': cShape})
                 elif self.shape_tool.IsAssembly(refLabel):
                     name = self.getName(cLabel)  # Instance name
-                    aLoc = OCC.TopLoc.TopLoc_Location()
+                    aLoc = OCC.Core.TopLoc.TopLoc_Location()
                     aLoc = self.shape_tool.GetLocation(cLabel)
                     self.assyLocStack.append(aLoc)
                     newAssyUID = self.getNewUID()
@@ -141,7 +141,7 @@ class StepXcafImporter(object):
                                           self.assyUidStack[-1],
                                           {'a': True, 'l': aLoc, 'c': None, 's': None})
                     self.assyUidStack.append(newAssyUID)
-                    rComps = OCC.TDF.TDF_LabelSequence() # Components of Assy
+                    rComps = OCC.Core.TDF.TDF_LabelSequence() # Components of Assy
                     subchilds = False
                     isAssy = self.shape_tool.GetComponents(refLabel, rComps, subchilds)
                     logger.debug("Assy name: %s" % name)
@@ -161,19 +161,19 @@ class StepXcafImporter(object):
         'a' (isAssy?), 'l' (TopLoc_Location), 'c' (Quantity_Color), 's' (TopoDS_Shape)
         """
         logger.info("Reading STEP file")
-        h_doc = OCC.TDocStd.Handle_TDocStd_Document()
+        h_doc = OCC.Core.TDocStd.Handle_TDocStd_Document_Create()
 
         # Create the application
-        app = OCC.XCAFApp._XCAFApp.XCAFApp_Application_GetApplication().GetObject()
-        app.NewDocument(OCC.TCollection.TCollection_ExtendedString("MDTV-CAF"), h_doc)
+        app = OCC.Core.XCAFApp._XCAFApp.XCAFApp_Application_GetApplication().GetObject()
+        app.NewDocument(OCC.Core.TCollection.TCollection_ExtendedString("MDTV-CAF"), h_doc)
 
         # Get root shapes
         doc = h_doc.GetObject()
-        h_shape_tool = OCC.XCAFDoc.XCAFDoc_DocumentTool().ShapeTool(doc.Main())
-        self.color_tool = OCC.XCAFDoc.XCAFDoc_DocumentTool().ColorTool(doc.Main())
-        self.layer_tool = OCC.XCAFDoc.XCAFDoc_DocumentTool().LayerTool(doc.Main())
+        h_shape_tool = OCC.Core.XCAFDoc.XCAFDoc_DocumentTool().ShapeTool(doc.Main())
+        self.color_tool = OCC.Core.XCAFDoc.XCAFDoc_DocumentTool().ColorTool(doc.Main())
+        self.layer_tool = OCC.Core.XCAFDoc.XCAFDoc_DocumentTool().LayerTool(doc.Main())
         
-        step_reader = OCC.STEPCAFControl.STEPCAFControl_Reader()
+        step_reader = OCC.Core.STEPCAFControl.STEPCAFControl_Reader()
         step_reader.SetColorMode(True)
         step_reader.SetLayerMode(True)
         step_reader.SetNameMode(True)
@@ -181,11 +181,11 @@ class StepXcafImporter(object):
 
         status = step_reader.ReadFile(str(self.filename))
 
-        if status == OCC.IFSelect.IFSelect_RetDone:
+        if status == OCC.Core.IFSelect.IFSelect_RetDone:
             logger.info("Transfer doc to STEPCAFControl_Reader")
             step_reader.Transfer(doc.GetHandle())
 
-        labels = OCC.TDF.TDF_LabelSequence()
+        labels = OCC.Core.TDF.TDF_LabelSequence()
         # TopoDS_Shape a_shape;
         self.shape_tool = h_shape_tool.GetObject()
         self.shape_tool.GetShapes(labels)
@@ -198,7 +198,7 @@ class StepXcafImporter(object):
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
             # No need to examine other labels at root explicitly.
-            topLoc = OCC.TopLoc.TopLoc_Location()
+            topLoc = OCC.Core.TopLoc.TopLoc_Location()
             topLoc = self.shape_tool.GetLocation(label)
             self.assyLocStack.append(topLoc)
             entry = label.EntryDumpToString()
@@ -211,7 +211,7 @@ class StepXcafImporter(object):
                                   None,
                                   {'a': True, 'l': None, 'c': None, 's': None})
             self.assyUidStack.append(newAssyUID)
-            topComps = OCC.TDF.TDF_LabelSequence() # Components of Top Assy
+            topComps = OCC.Core.TDF.TDF_LabelSequence() # Components of Top Assy
             subchilds = False
             isAssy = self.shape_tool.GetComponents(label, topComps, subchilds)
             logger.debug("Is Assembly? %s" % isAssy)
@@ -240,7 +240,7 @@ class StepXcafImporter(object):
                 shapeType = shape.ShapeType()
                 logger.debug("The shape type is: %i" % shapeType)
                 if shapeType == 0:
-                    logger.debug("The shape type is OCC.TopAbs.TopAbs_COMPOUND")
+                    logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_COMPOUND")
                     topo = aocutils.topology.Topo(shape)
                     logger.debug("Nb of compounds : %i" % topo.number_of_compounds)
                     logger.debug("Nb of solids : %i" % topo.number_of_solids)
@@ -253,13 +253,13 @@ class StepXcafImporter(object):
                                               self.assyUidStack[-1],
                                               {'a': False, 'l': None, 'c': color, 's': solid})
                 elif shapeType == 2:
-                    logger.debug("The shape type is OCC.TopAbs.TopAbs_SOLID")
+                    logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SOLID")
                     self.tree.create_node(name,
                                           self.getNewUID(),
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None, 'c': color, 's': shape})
                 elif shapeType == 3:
-                    logger.debug("The shape type is OCC.TopAbs.TopAbs_SHELL")
+                    logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SHELL")
                     self.tree.create_node(name,
                                           self.getNewUID(),
                                           self.assyUidStack[-1],
