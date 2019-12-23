@@ -572,14 +572,13 @@ class MainWindow(QMainWindow):
                 wp = self._wpDict[uid]
                 border = wp.border
                 aisShape = AIS_Shape(border)
-                h_aisShape = aisShape.GetHandle()
-                context.Display(h_aisShape)
+                context.Display(aisShape, True)
                 if uid == self.activeWpUID:
-                    borderColor = OCC.Quantity.Quantity_NOC_DARKGREEN
+                    borderColor = Quantity.Quantity_NOC_DARKGREEN
                 else:
-                    borderColor = OCC.Quantity.Quantity_NOC_GRAY
+                    borderColor = Quantity.Quantity_NOC_GRAY
                 context.SetColor(h_aisShape, borderColor)
-                context.SetTransparency(h_aisShape, 0.8)
+                context.SetTransparency(h_aisShape, 0.8, True)
                 clClr = OCC.Display.OCCViewer.color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline, color=clClr)
