@@ -79,9 +79,8 @@ import myStepXcafReader
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 from OCC import VERSION
+from OCC.Core import Quantity
 print("OCC version: %s" % VERSION)
-
-print(dir(AIS_Shape))
 
 used_backend = OCC.Display.backend.load_backend()
 print("OCC Version = %s" % OCC.VERSION)
@@ -559,15 +558,16 @@ class MainWindow(QMainWindow):
                     transp = 0
                 color = self._colorDict[uid]
                 aisShape = AIS_Shape(self._partDict[uid])
-                h_aisShape = aisShape.GetHandle()
-                context.Display(h_aisShape)
-                context.SetColor(h_aisShape, color)
-                context.SetTransparency(h_aisShape, transp)
+                context.Display(aisShape, True)
+                context.SetColor(aisShape, color, True)
+                # Set shape transparency, a float from 0.0 to 1.0
+                context.SetTransparency(aisShape, transp, True)
+                drawer = aisShape.DynamicHilightAttributes()
                 if uid == self.activePartUID:
-                    edgeColor = OCC.Quantity.Quantity_NOC_RED
+                    edgeColor = Quantity.Quantity_NOC_RED
                 else:
-                    edgeColor = OCC.Quantity.Quantity_NOC_BLACK
-                context.HilightWithColor(h_aisShape, edgeColor)
+                    edgeColor = Quantity.Quantity_NOC_BLACK
+                context.HilightWithColor(aisShape, drawer, True)
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
                 border = wp.border
