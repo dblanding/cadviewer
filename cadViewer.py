@@ -442,7 +442,7 @@ class MainWindow(QMainWindow):
         # Update appropriate dictionaries and add node to treeModel
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
-            if color:   # OCC.Quantity.Quantity_Color()
+            if color:   # Quantity.Quantity_Color()
                 c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
                 c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
@@ -639,7 +639,7 @@ class MainWindow(QMainWindow):
         if not fname:
             print("Load step cancelled")
             return
-        fname = str(fname)
+        fname, _ = fname
         name = os.path.basename(fname).split('.')[0]
         nextUID = self._currentUID
         stepImporter = myStepXcafReader.StepXcafImporter(fname, nextUID)
@@ -648,7 +648,7 @@ class MainWindow(QMainWindow):
         for uid in tree.expand_tree(mode=self.tree.DEPTH):
             node = tree.get_node(uid)
             name = node.tag
-            itemName = QStringList([name, str(uid)])
+            itemName = [name, str(uid)]
             parentUid = node.bpointer
             if node.data['a']:  # Assembly
                 if not parentUid: # This is the top level item
@@ -687,6 +687,7 @@ class MainWindow(QMainWindow):
         self.tree.paste(0, tree) # Paste tree onto win.tree root
         
         keyList = tempTreeDict.keys()
+        keyList = list(keyList)
         keyList.sort()
         maxUID = keyList[-1]
         self._currentUID = maxUID
