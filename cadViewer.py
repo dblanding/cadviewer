@@ -83,7 +83,6 @@ from OCC.Core import Quantity
 print("OCC version: %s" % VERSION)
 
 used_backend = OCC.Display.backend.load_backend()
-print("OCC Version = %s" % OCC.VERSION)
 from OCC.Display import qtDisplay
 
 TOL = 1e-7 # Linear Tolerance
@@ -93,6 +92,7 @@ print('TOLERANCE = ', TOL)
 class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
     """ Display assembly structure
     """
+
     def __init__(self, parent=None):
         QTreeWidget.__init__(self, parent)
         self.header().setHidden(True)
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
         #self.completed.connect(self.contextMenu)
         self.popMenu = QMenu(self)
-        self.setWindowTitle("Simple CAD App using pythonOCC-%s ('qt' backend)"%VERSION)
+        self.setWindowTitle("Simple CAD App using PythonOCC-%s (PyQt5 backend)"%VERSION)
         self.resize(960,720)
         self.setCentralWidget(self.canva)
         self.createDockWidget()

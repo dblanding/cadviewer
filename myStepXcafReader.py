@@ -34,14 +34,14 @@ import OCC.Core.Interface
 import OCC.Core.Quantity
 from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
 import OCC.Core.STEPControl
-from OCC.Core.TDataStd import *
+from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
 from OCC.Core.TCollection import TCollection_ExtendedString
 import OCC.Core.TColStd
 from OCC.Core.TDF import TDF_LabelSequence
 from OCC.Core.TDocStd import TDocStd_Document
 import OCC.Core.TopAbs
 import OCC.Core.TopoDS
-import OCC.Core.XCAFApp
+from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
 from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
@@ -78,12 +78,12 @@ class StepXcafImporter(object):
         return uid
 
     def getName(self, label):
-        # Get the part name
-        name = OCC.Core.TDataStd.TDataStd_Name()
-        label.FindAttribute(OCC.Core.TDataStd.TDataStd_Name_GetID(), name)
-        strdump = name.DumpToString()
-        name = strdump.split('|')[-2]
-        return name
+        '''Get the part name from its label.'''
+        N = TDataStd_Name()
+        label.FindAttribute(TDataStd_Name_GetID(), N)
+        strdump = N.DumpToString()
+        #name = strdump.split('|')[-2]
+        return strdump
         
     def getColor(self, shape):
         # Get the part color
@@ -168,8 +168,13 @@ class StepXcafImporter(object):
         logger.info("Reading STEP file")
         doc = TDocStd_Document(TCollection_ExtendedString("STEP"))
 
+        # Create the application
+        app = XCAFApp_Application_GetApplication()
+        app.NewDocument(TCollection_ExtendedString("MDTV-CAF"), doc)
+
         # Get root shapes
         shape_tool = XCAFDoc_DocumentTool_ShapeTool(doc.Main())
+        shape_tool.SetAutoNaming(True)
         self.color_tool = XCAFDoc_DocumentTool_ColorTool(doc.Main())
         layer_tool = XCAFDoc_DocumentTool_LayerTool(doc.Main())
         l_materials = XCAFDoc_DocumentTool_MaterialTool(doc.Main())
@@ -187,7 +192,7 @@ class StepXcafImporter(object):
 
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
-        # TopoDS_Shape a_shape;
+
         shape_tool.GetShapes(labels)
         self.shape_tool = shape_tool
         #self.shape_tool = shape_tool
