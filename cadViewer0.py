@@ -5,7 +5,7 @@
 # Perhaps it could be a starting point for a more elaborate program.
 # It may be only useful to facilitate the exploration of pythonOCC syntax.
 # The latest  version of this file can be found at:
-# https://sites.google.com/site/pythonocc/
+# https://github.com/dblanding/cadviewer
 #
 # Author: Doug Blanding   <dblanding at gmail dot com>
 #

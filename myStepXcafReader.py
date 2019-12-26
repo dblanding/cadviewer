@@ -4,7 +4,7 @@
 # Assembly / Part structure, including the names of parts and assemblies, colors
 # of parts, and with all components shown in their correct positions.
 # The latest  version of this file can be found at:
-# https://sites.google.com/site/pythonocc/
+# //https://github.com/dblanding/cadviewer
 #
 # Author: Doug Blanding   <dblanding at gmail dot com>
 #
