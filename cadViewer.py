@@ -42,7 +42,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
 import treelib
 import workplane
-#import rpnCalculator
+import rpnCalculator
 from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import *
 from OCC.Core.BRepAdaptor import *

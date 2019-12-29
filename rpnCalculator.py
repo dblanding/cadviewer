@@ -7,17 +7,19 @@
 
 import math
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import (QToolButton, QDialog, QGridLayout, QLineEdit,
+                             QLayout, QSizePolicy)
 
 def nyi():
-    print 'Not yet implemented'
+    print('Not yet implemented')
 
-class Button(QtGui.QToolButton):
+class Button(QToolButton):
     def __init__(self, text, parent=None):
         super(Button, self).__init__(parent)
 
-        self.setSizePolicy(QtGui.QSizePolicy.Minimum,
-                           QtGui.QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Minimum,
+                           QSizePolicy.Preferred)
         self.setText(text)
 
     def sizeHint(self):
@@ -27,7 +29,7 @@ class Button(QtGui.QToolButton):
         return size
 
 
-class Calculator(QtGui.QDialog):
+class Calculator(QDialog):
     """RPN calculator styled after the one in CoCreate SolidDesigner CAD."""
     mem = ''
     keip = False    # Flag set when keyboard entry is in progress
@@ -57,9 +59,9 @@ class Calculator(QtGui.QDialog):
         myred = 'hsv(0,255,180)'
         mygold = 'goldenrod'
         
-        self.mainLayout = QtGui.QGridLayout()
+        self.mainLayout = QGridLayout()
         self.mainLayout.setSpacing(0)
-        self.mainLayout.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        self.mainLayout.setSizeConstraint(QLayout.SetFixedSize)
 
         # Grid is 36 columns across
         self.butn('T', 0, 0, lambda state, r='t': self.pr(r), colspan=4)
@@ -146,7 +148,7 @@ class Calculator(QtGui.QDialog):
         self.mainLayout.addWidget(b, row, col, rowspan, colspan)
         
     def display(self):
-        d = QtGui.QLineEdit('0')
+        d = QLineEdit('0')
         d.setAlignment(QtCore.Qt.AlignRight)
         d.setMaxLength(18)
         font = d.font()
@@ -155,7 +157,7 @@ class Calculator(QtGui.QDialog):
         return d
 
     def closeEvent(self, event):
-        print 'calculator closing'
+        print('calculator closing')
         try:
             self.caller.calculator = None
         except:
@@ -168,7 +170,7 @@ class Calculator(QtGui.QDialog):
         if self.caller:
             self.caller.valueFromCalc(value)
         else:
-            print value
+            print(value)
         self.keip = False
         self.needrup = True
 
