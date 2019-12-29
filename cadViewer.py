@@ -27,6 +27,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import sys
 import os, os.path
 import math
@@ -34,11 +35,11 @@ from itertools import islice
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QMenu, QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
-                             QToolBar, QFileDialog)
+                             QToolBar, QFileDialog, QAbstractItemView)
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
 import treelib
 import workplane
 #import rpnCalculator
@@ -84,6 +85,9 @@ print("OCC version: %s" % VERSION)
 
 used_backend = OCC.Display.backend.load_backend()
 from OCC.Display import qtDisplay
+
+logger = logging.getLogger(__name__)
+logger.setLevel(10) # 10 = debug; 20 = info; 40 = error
 
 TOL = 1e-7 # Linear Tolerance
 ATOL = TOL # Angular Tolerance
@@ -635,11 +639,12 @@ class MainWindow(QMainWindow):
         3. Paste the loaded tree onto win.tree (treeModel)
         """
         prompt = 'Select STEP file to import'
-        fname = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fnametuple = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fname, _ = fnametuple
+        logger.debug("Load file name: %s" % fname)
         if not fname:
             print("Load step cancelled")
             return
-        fname, _ = fname
         name = os.path.basename(fname).split('.')[0]
         nextUID = self._currentUID
         stepImporter = myStepXcafReader.StepXcafImporter(fname, nextUID)

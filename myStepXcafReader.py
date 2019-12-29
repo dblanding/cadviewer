@@ -32,21 +32,21 @@ import OCC.Core.BRep
 from OCC.Core.IFSelect import IFSelect_RetDone
 import OCC.Core.Interface
 import OCC.Core.Quantity
+import OCC.Core.TopAbs
+import OCC.Core.TopoDS
 from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
 import OCC.Core.STEPControl
 from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
-from OCC.Core.TCollection import TCollection_ExtendedString
+from OCC.Core.TCollection import (TCollection_ExtendedString,
+                                  TCollection_AsciiString)
 import OCC.Core.TColStd
-from OCC.Core.TDF import TDF_LabelSequence
 from OCC.Core.TDocStd import TDocStd_Document
-import OCC.Core.TopAbs
-import OCC.Core.TopoDS
 from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
 from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
                               XCAFDoc_DocumentTool_MaterialTool)
-
+from OCC.Core.TDF import TDF_LabelSequence, TDF_Label, TDF_Tool
 import OCC.Core.XSControl
 #import aocutils.topology
 import treelib
@@ -79,11 +79,13 @@ class StepXcafImporter(object):
 
     def getName(self, label):
         '''Get the part name from its label.'''
+        #entry = TCollection_AsciiString()
+        #TDF_Tool.Entry(label, entry)
         N = TDataStd_Name()
         label.FindAttribute(TDataStd_Name_GetID(), N)
         strdump = N.DumpToString()
-        #name = strdump.split('|')[-2]
-        return strdump
+        name = strdump.split('|')[-2]
+        return name
         
     def getColor(self, shape):
         # Get the part color
@@ -197,7 +199,10 @@ class StepXcafImporter(object):
         self.shape_tool = shape_tool
         #self.shape_tool = shape_tool
         logger.info('Number of labels at root : %i' % labels.Length())
-        label = labels.Value(1) # First label at root
+        try:
+            label = labels.Value(1) # First label at root
+        except RuntimeError:
+            return
         name = self.getName(label)
         logger.info('Name of root label: %s' % name)
         isAssy = shape_tool.IsAssembly(label)
