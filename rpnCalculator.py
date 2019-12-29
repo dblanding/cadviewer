@@ -6,10 +6,10 @@
 #############################################################################
 
 import math
-
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import (QToolButton, QDialog, QGridLayout, QLineEdit,
-                             QLayout, QSizePolicy)
+import sys
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import (QApplication, QToolButton, QDialog, QGridLayout,
+                             QLineEdit, QLayout, QSizePolicy)
 
 def nyi():
     print('Not yet implemented')
@@ -85,28 +85,28 @@ class Calculator(QDialog):
         self.butn('7', 5, 0, lambda state, c='7': self.keyin(c), clr=myblue1)
         self.butn('8', 5, 6, lambda state, c='8': self.keyin(c), clr=myblue1)
         self.butn('9', 5, 12, lambda state, c='9': self.keyin(c), clr=myblue1)
-        self.butn('+', 5, 18, lambda state, op='+': self.calc(op), clr=myblue2)
+        self.butn('+', 5, 18, lambda state, op='+': self.calculate(op), clr=myblue2)
         self.butn('R up', 5, 24, self.rotateup, clr=mygreen, colspan=6)
         self.butn('R dn', 5, 30, self.rotatedn, clr=mygreen, colspan=6)
         
         self.butn('4', 6, 0, lambda state, c='4': self.keyin(c), clr=myblue1)
         self.butn('5', 6, 6, lambda state, c='5': self.keyin(c), clr=myblue1)
         self.butn('6', 6, 12, lambda state, c='6': self.keyin(c), clr=myblue1)
-        self.butn('-', 6, 18, lambda state, op='-': self.calc(op), clr=myblue2)
+        self.butn('-', 6, 18, lambda state, op='-': self.calculate(op), clr=myblue2)
         self.butn('<-', 6, 24, self.trimx, clr=myred, colspan=4)
         self.butn('X<>Y', 6, 28, self.swapxy, clr=mygreen, colspan=8)
         
         self.butn('1', 7, 0, lambda state, c='1': self.keyin(c), clr=myblue1)
         self.butn('2', 7, 6, lambda state, c='2': self.keyin(c), clr=myblue1)
         self.butn('3', 7, 12, lambda state, c='3': self.keyin(c), clr=myblue1)
-        self.butn('*', 7, 18, lambda state, op='*': self.calc(op), clr=myblue2)
+        self.butn('*', 7, 18, lambda state, op='*': self.calculate(op), clr=myblue2)
         self.butn('CL X', 7, 24, self.clearx, clr=myred)
         self.butn('CLR', 7, 30, self.clearall, clr=myred)
         
         self.butn('0', 8, 0, lambda state, c='0': self.keyin(c), clr=myblue1)
         self.butn('.', 8, 6, lambda state, c='.': self.keyin(c), clr=myblue2)
-        self.butn('+/-', 8, 12, lambda state, op='+/-': self.calc(op), clr=myblue2)
-        self.butn('/', 8, 18, lambda state, c='/': self.calc(c), clr=myblue2)
+        self.butn('+/-', 8, 12, lambda state, op='+/-': self.calculate(op), clr=myblue2)
+        self.butn('/', 8, 18, lambda state, c='/': self.calculate(c), clr=myblue2)
         self.butn('ENTER', 8, 24, self.enter, clr=mygold, colspan=12)
         
         self.butn('Sin', 9, 0,
@@ -209,7 +209,7 @@ class Calculator(QDialog):
         self.keip = False
         self.needrup = False
 
-    def calc(self, op):
+    def calculate(self, op):
         """Arithmetic calculations between x and y registers, then rotate down."""
         try:
             if op == '+/-':
@@ -300,9 +300,7 @@ class Calculator(QDialog):
             self.clearx()
 
     def swapxy(self):
-        temp = self.y
-        self.y = self.x
-        self.x = temp
+        self.x, self.y = (self.y, self.x)
         self.updateDisplays()
 
     def clearx(self):
@@ -329,6 +327,6 @@ if __name__ == '__main__':
 
     import sys
 
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     calc = Calculator()
     sys.exit(calc.exec_())

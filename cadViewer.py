@@ -521,7 +521,7 @@ class MainWindow(QMainWindow):
             self.clearCallback()
         display.register_select_callback(callback)
         self.registeredCallback = callback
-        self.currOpLabel.setText("Current Operation: %s " % callback.func_name[:-1])
+        self.currOpLabel.setText("Current Operation: %s " % callback.__name__[:-1])
             
     def clearCallback(self):
         if self.registeredCallback:
