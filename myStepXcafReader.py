@@ -12,22 +12,21 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # myStepXcafReader is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # if not, write to the Free Software Foundation, Inc.
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-
-from __future__ import print_function
-
 import logging
 import os.path
+import treelib
+
 import OCC.Core.BRep
 from OCC.Core.IFSelect import IFSelect_RetDone
 import OCC.Core.Interface
@@ -46,13 +45,13 @@ from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
                               XCAFDoc_DocumentTool_MaterialTool)
-from OCC.Core.TDF import TDF_LabelSequence, TDF_Label, TDF_Tool
+from OCC.Core.TDF import TDF_LabelSequence
 import OCC.Core.XSControl
-#import aocutils.topology
-import treelib
+
+from OCC.Extend.TopologyUtils import TopologyExplorer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(10) # 10 = debug; 20 = info; 40 = error
+logger.setLevel(logging.DEBUG)
 
 class StepXcafImporter(object):
     """
@@ -69,7 +68,7 @@ class StepXcafImporter(object):
         self._currentUID = nextUID
         self.assyUidStack = [0]
         self.assyLocStack = []
-        
+
         self.read_file()
 
     def getNewUID(self):
@@ -79,14 +78,8 @@ class StepXcafImporter(object):
 
     def getName(self, label):
         '''Get the part name from its label.'''
-        #entry = TCollection_AsciiString()
-        #TDF_Tool.Entry(label, entry)
-        N = TDataStd_Name()
-        label.FindAttribute(TDataStd_Name_GetID(), N)
-        strdump = N.DumpToString()
-        name = strdump.split('|')[-2]
-        return name
-        
+        return label.GetLabelName()
+
     def getColor(self, shape):
         # Get the part color
         #string_seq = self.layer_tool.GetObject().GetLayers(shape)
@@ -128,10 +121,10 @@ class StepXcafImporter(object):
                 if self.shape_tool.IsSimpleShape(refLabel):
                     tempAssyLocStack = list(self.assyLocStack)
                     tempAssyLocStack.reverse()
-                    
+
                     for loc in tempAssyLocStack:
                         cShape.Move(loc)
-                    
+
                     color = self.getColor(refShape)
                     self.tree.create_node(name,
                                           self.getNewUID(),
@@ -159,11 +152,11 @@ class StepXcafImporter(object):
         self.assyUidStack.pop()
         self.assyLocStack.pop()
         return
-                   
+
     def read_file(self):
         """
         Build self.tree (treelib.Tree()) containing the CAD data read from a step file.
-        Each node of self.tree contains the following: 
+        Each node of self.tree contains the following:
         (Name, UID, ParentUID, {Data}) where the Data keys are:
         'a' (isAssy?), 'l' (TopLoc_Location), 'c' (Quantity_Color), 's' (TopoDS_Shape)
         """
@@ -180,7 +173,7 @@ class StepXcafImporter(object):
         self.color_tool = XCAFDoc_DocumentTool_ColorTool(doc.Main())
         layer_tool = XCAFDoc_DocumentTool_LayerTool(doc.Main())
         l_materials = XCAFDoc_DocumentTool_MaterialTool(doc.Main())
-        
+
         step_reader = STEPCAFControl_Reader()
         step_reader.SetColorMode(True)
         step_reader.SetLayerMode(True)
@@ -254,12 +247,13 @@ class StepXcafImporter(object):
                 logger.debug("The shape type is: %i" % shapeType)
                 if shapeType == 0:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_COMPOUND")
-                    topo = aocutils.topology.Topo(shape)
-                    logger.debug("Nb of compounds : %i" % topo.number_of_compounds)
-                    logger.debug("Nb of solids : %i" % topo.number_of_solids)
-                    logger.debug("Nb of shells : %i" % topo.number_of_shells)
+                    topo = TopologyExplorer(shape)
+                    #topo = aocutils.topology.Topo(shape)
+                    logger.debug("Nb of compounds : %i" % topo.number_of_compounds())
+                    logger.debug("Nb of solids : %i" % topo.number_of_solids())
+                    logger.debug("Nb of shells : %i" % topo.number_of_shells())
                     newAssyUID = self.getNewUID()
-                    for i, solid in enumerate(topo.solids):
+                    for i, solid in enumerate(topo.solids()):
                         name = "P%s" % str(i+1)
                         self.tree.create_node(name,
                                               self.getNewUID(),
@@ -277,6 +271,4 @@ class StepXcafImporter(object):
                                           self.getNewUID(),
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None, 'c': color, 's': shape})
-                
         return True
-
