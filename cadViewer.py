@@ -61,6 +61,7 @@ from OCC.Core.Geom2d import *
 from OCC.Core.GeomAPI import *
 from OCC.Core.GeomLib import *
 from OCC.Core.GCE2d import *
+from OCC.Core.Prs3d import Prs3d_Drawer
 from OCC.Core.TopoDS import *
 from OCC.Core.TopExp import *
 from OCC.Core.TopAbs import *
@@ -575,14 +576,19 @@ class MainWindow(QMainWindow):
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
                 border = wp.border
-                aisShape = AIS_Shape(border)
-                context.Display(aisShape, True)
                 if uid == self.activeWpUID:
-                    borderColor = Quantity.Quantity_NOC_DARKGREEN
+                    #borderColor = Quantity.Quantity_NOC_DARKGREEN
+                    borderColor = Quantity.Quantity_Color(20)
                 else:
                     borderColor = Quantity.Quantity_NOC_GRAY
-                context.SetColor(h_aisShape, borderColor)
-                context.SetTransparency(h_aisShape, 0.8, True)
+                #context.SetColor(aisShape, borderColor, True)
+                #context.Display(aisShape, True)
+                #context.SetTransparency(h_aisShape, 0.8, True)
+                aisShape = AIS_Shape(border)
+                drawer = Prs3d_Drawer()
+                aisShape.SetAttributes(drawer)
+                aisShape.SetColor(borderColor)
+                '''
                 clClr = OCC.Display.OCCViewer.color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline, color=clClr)
@@ -592,6 +598,7 @@ class MainWindow(QMainWindow):
                     self.canva._display.DisplayShape(ccirc, color=clClr)
                 for wire in wp.wireList:
                     self.canva._display.DisplayShape(wire, color="WHITE")
+                '''
                 display.Repaint()
 
     def drawAll(self):

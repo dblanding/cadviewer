@@ -358,7 +358,7 @@ class WorkPlane(object):
             gpPlane = gp_Pln(xyzAx3)
             self.gpPlane = gpPlane              # type: gp_Pln
             self.plane = Geom_Plane(gpPlane)    # type: Geom_Plane
-            self.surface = Handle_Geom_Surface(Geom_Plane(gpPlane)) # type: Handle_Geom_Surface
+            #self.surface = Handle_Geom_Surface(Geom_Plane(gpPlane)) # type: Handle_Geom_Surface
         elif face:  # create workplane on face, uDir defined by faceU
             wDir = Construct.face_normal(face)
             props = OCC.GProp.GProp_GProps()
@@ -375,7 +375,7 @@ class WorkPlane(object):
             vDir = axis3.YDirection()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
-            self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
+            #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
         elif ax3:
             axis3 = ax3
             uDir = axis3.XDirection()
@@ -384,7 +384,7 @@ class WorkPlane(object):
             origin = axis3.Location()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
-            self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
+            #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
             
         self.Trsf = gp_Trsf()
         self.Trsf.SetTransformation(axis3)
@@ -421,6 +421,24 @@ class WorkPlane(object):
         aWire = BRepBuilderAPI_MakeWire(e1.Edge(), e2.Edge(), e3.Edge(), e4.Edge())
         myWireProfile = aWire.Wire()
         return myWireProfile # TopoDS_Wire
+
+    def makeSqProfile(self, size):
+        # points and segments need to be in CW sequence to get W pointing along Z
+        p1 = gp_Pnt(-size, size, 0)
+        p2 = gp_Pnt(size, size, 0)
+        p3 = gp_Pnt(size, -size, 0)
+        p4 = gp_Pnt(-size, -size, 0)
+        # Four edges
+        me1 = BRepBuilderAPI_MakeEdge(p1, p2)
+        me2 = BRepBuilderAPI_MakeEdge(p2, p3)
+        me3 = BRepBuilderAPI_MakeEdge(p3, p4)
+        me4 = BRepBuilderAPI_MakeEdge(p4, p1)
+        # BRepBuilderAPI_MakeEdge objects cast into type TopoDS_Edge using the Edge() method.
+        mw = BRepBuilderAPI_MakeWire(me1.Edge(), me2.Edge(), me3.Edge(), me4.Edge())
+        if not mw.IsDone():
+            raise AssertionError("wire is not done.")
+        # BRepBuilderAPI_MakeWire object cast into a type TopoDS_Wire using the Wire() method.
+        return mw.Wire()
 
     def makeWpBorderAlt(self, size): # This doesn't produce a visible border
         wireProfile = self.makeSqProfile(size)
