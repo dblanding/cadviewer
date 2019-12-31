@@ -88,15 +88,14 @@ used_backend = OCC.Display.backend.load_backend()
 from OCC.Display import qtDisplay
 
 logger = logging.getLogger(__name__)
-logger.setLevel(10) # 10 = debug; 20 = info; 40 = error
+logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
 TOL = 1e-7 # Linear Tolerance
 ATOL = TOL # Angular Tolerance
 print('TOLERANCE = ', TOL)
 
 class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
-    """ Display assembly structure
-    """
+    """ Display assembly structure. """
 
     def __init__(self, parent=None):
         QTreeWidget.__init__(self, parent)
@@ -107,7 +106,7 @@ class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
         self.setDropIndicatorShown(True)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
-        #self.contextMenu.completed.connect(
+        self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
 
     def contextMenu(self, point):
@@ -166,9 +165,9 @@ class MainWindow(QMainWindow):
     def __init__(self, *args):
         super().__init__()
         self.canva = qtDisplay.qtViewer3d(self)
-        #self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
-        #self.completed.connect(self.contextMenu)
+        self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using PythonOCC-%s (PyQt5 backend)"%VERSION)
         self.resize(960,720)
@@ -403,7 +402,7 @@ class MainWindow(QMainWindow):
     def edgeLen(self):
         edgeLen()
 
-    ####  Administrative and data mangaement methods:
+    ####  Administrative and data management methods:
 
     def launchCalc(self):
         if not self.calculator:
@@ -2045,92 +2044,93 @@ def setUnits_in():
         
 def setUnits_mm():
     win.setUnits('mm')
-        
-app = QApplication(sys.argv)
-win = MainWindow()
-win.add_menu('File')
-win.add_function_to_menu('File', "Load STEP", win.loadStep)
-win.add_function_to_menu('File', "Save STEP (Act Prt)", win.saveStepActPrt)
-win.add_menu('Workplane')
-win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
-win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
-win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
-win.add_menu('2D Geometry')
-win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeWireCircle)
-win.add_menu('Create 3D')
-win.add_function_to_menu('Create 3D', "Box", makeBox)
-win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
-win.add_menu('Modify Active Part')
-win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
-win.add_function_to_menu('Modify Active Part', "Make Hole", hole)
-win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
-win.add_function_to_menu('Modify Active Part', "Shell", shell)
-win.add_function_to_menu('Modify Active Part', "Lift Face", lift)
-win.add_function_to_menu('Modify Active Part', "Offset Face", offsetFace)
-win.add_function_to_menu('Modify Active Part', "Align Face", alignFace)
-win.add_function_to_menu('Modify Active Part', "Tweak Face", tweakFace)
-win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
-win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
-win.add_menu('Utility')
-win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)    
-win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)    
-win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)    
-win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
-win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 
-win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm) 
 
-drawSubMenu = QMenu('Draw')
-win.popMenu.addMenu(drawSubMenu)    
-drawSubMenu.addAction('Fit All', win.fitAll)    
-drawSubMenu.addAction('Redraw', win.redraw)    
-drawSubMenu.addAction('Hide All', win.eraseAll)    
-drawSubMenu.addAction('Draw All', win.drawAll)    
-drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
+if __name__ == '__main__':        
+    app = QApplication(sys.argv)
+    win = MainWindow()
+    win.add_menu('File')
+    win.add_function_to_menu('File', "Load STEP", win.loadStep)
+    win.add_function_to_menu('File', "Save STEP (Act Prt)", win.saveStepActPrt)
+    win.add_menu('Workplane')
+    win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
+    win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
+    win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
+    win.add_menu('2D Geometry')
+    win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeWireCircle)
+    win.add_menu('Create 3D')
+    win.add_function_to_menu('Create 3D', "Box", makeBox)
+    win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
+    win.add_menu('Modify Active Part')
+    win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
+    win.add_function_to_menu('Modify Active Part', "Make Hole", hole)
+    win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
+    win.add_function_to_menu('Modify Active Part', "Shell", shell)
+    win.add_function_to_menu('Modify Active Part', "Lift Face", lift)
+    win.add_function_to_menu('Modify Active Part', "Offset Face", offsetFace)
+    win.add_function_to_menu('Modify Active Part', "Align Face", alignFace)
+    win.add_function_to_menu('Modify Active Part', "Tweak Face", tweakFace)
+    win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
+    win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
+    win.add_menu('Utility')
+    win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)    
+    win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)    
+    win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)    
+    win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
+    win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 
+    win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm) 
 
-win.asyPrtTree.popMenu.addAction('Set Active', win.setActive)
-win.asyPrtTree.popMenu.addAction('Make Transparent', win.setTransparent)
-win.asyPrtTree.popMenu.addAction('Make Opaque', win.setOpaque)
-win.asyPrtTree.popMenu.addAction('Edit Name', win.editName)
+    drawSubMenu = QMenu('Draw')
+    win.popMenu.addMenu(drawSubMenu)    
+    drawSubMenu.addAction('Fit All', win.fitAll)    
+    drawSubMenu.addAction('Redraw', win.redraw)    
+    drawSubMenu.addAction('Hide All', win.eraseAll)    
+    drawSubMenu.addAction('Draw All', win.drawAll)    
+    drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
 
-win.show()
-win.canva.InitDriver()
-display = win.canva._display
+    win.asyPrtTree.popMenu.addAction('Set Active', win.setActive)
+    win.asyPrtTree.popMenu.addAction('Make Transparent', win.setTransparent)
+    win.asyPrtTree.popMenu.addAction('Make Opaque', win.setOpaque)
+    win.asyPrtTree.popMenu.addAction('Edit Name', win.editName)
 
-selectSubMenu = QMenu('Select Mode')
-win.popMenu.addMenu(selectSubMenu)    
-selectSubMenu.addAction('Vertex', display.SetSelectionModeVertex)    
-selectSubMenu.addAction('Edge', display.SetSelectionModeEdge)    
-selectSubMenu.addAction('Face', display.SetSelectionModeFace)    
-selectSubMenu.addAction('Shape', display.SetSelectionModeShape)    
-selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
-win.popMenu.addAction('Clear Callback', win.clearCallback)
+    win.show()
+    win.canva.InitDriver()
+    display = win.canva._display
 
-win.wpToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/tpcl.gif')), 'By 2 Pnts', cline2Pts)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angle', clineAng)
-#win.wpToolBar.addAction(QIcon(QPixmap('icons/refangcl.gif')), 'Ref-Ang', clineRefAng)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/abcl.gif')), 'Angular Bisector', clineAngBisec)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/lbcl.gif')), 'Linear Bisector', clineLinBisec)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/parcl.gif')), 'Parallel', clinePara)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/perpcl.gif')), 'Perpendicular', clinePerp)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan1.gif')), 'Tangent to circle', clineTan1)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan2.gif')), 'Tangent 2 circles', clineTan2)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/ccirc.gif')), 'Circle', ccirc)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cc3p.gif')), 'Circle by 3Pts', ccirc)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cccirc.gif')), 'Concentric Circle', ccirc)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
-win.wpToolBar.addSeparator()
-win.wpToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', geom)
-win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', geom)
+    selectSubMenu = QMenu('Select Mode')
+    win.popMenu.addMenu(selectSubMenu)    
+    selectSubMenu.addAction('Vertex', display.SetSelectionModeVertex)    
+    selectSubMenu.addAction('Edge', display.SetSelectionModeEdge)    
+    selectSubMenu.addAction('Face', display.SetSelectionModeFace)    
+    selectSubMenu.addAction('Shape', display.SetSelectionModeShape)    
+    selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
+    win.popMenu.addAction('Clear Callback', win.clearCallback)
 
-win.raise_() # bring the app to the top
-app.exec_()
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/tpcl.gif')), 'By 2 Pnts', cline2Pts)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angle', clineAng)
+    #win.wpToolBar.addAction(QIcon(QPixmap('icons/refangcl.gif')), 'Ref-Ang', clineRefAng)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/abcl.gif')), 'Angular Bisector', clineAngBisec)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/lbcl.gif')), 'Linear Bisector', clineLinBisec)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/parcl.gif')), 'Parallel', clinePara)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/perpcl.gif')), 'Perpendicular', clinePerp)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan1.gif')), 'Tangent to circle', clineTan1)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan2.gif')), 'Tangent 2 circles', clineTan2)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/ccirc.gif')), 'Circle', ccirc)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cc3p.gif')), 'Circle by 3Pts', ccirc)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cccirc.gif')), 'Concentric Circle', ccirc)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
+    win.wpToolBar.addSeparator()
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', geom)
+
+    win.raise_() # bring the app to the top
+    app.exec_()
 

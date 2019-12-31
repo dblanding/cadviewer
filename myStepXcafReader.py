@@ -78,7 +78,10 @@ class StepXcafImporter(object):
 
     def getName(self, label):
         '''Get the part name from its label.'''
-        return label.GetLabelName()
+        try:
+            return label.GetLabelName()
+        except AttributeError:
+            return "No_name"
 
     def getColor(self, shape):
         # Get the part color

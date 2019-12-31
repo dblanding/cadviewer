@@ -27,15 +27,21 @@
 
 from __future__ import absolute_import
 
+import logging
 import sys
 import os, os.path
 import math
+from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
+                             QMenu, QDockWidget, QDesktopWidget, QToolButton,
+                             QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
+                             QToolBar, QFileDialog, QAbstractItemView)
+from PyQt5.QtGui import QIcon
+from PyQt5 import QtGui
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
+import treelib
 import workplane
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QTreeWidget
-from PyQt5.QtWidgets import QMenu, QDockWidget, QDesktopWidget, QToolButton
-from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QAction
-import PyQt5.QtWidgets
-#import rpnCalculator
+import rpnCalculator
 from OCC.Core.gp import *
 from OCC.Core.GC import *
 from OCC.Core.BRepBuilderAPI import *
@@ -64,7 +70,7 @@ from OCC.Core.IFSelect import IFSelect_RetDone
 import OCC.Core.BRepLib as BRepLib
 import OCC.Core.BRep as BRep
 #import OCCUtils.Construct
-#import myStepXcafReader
+import myStepXcafReader
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 used_backend = OCC.Display.backend.load_backend()
@@ -82,8 +88,9 @@ class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
         self.setDragDropMode(self.InternalMove)
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
-        #self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
+        self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
 
     def contextMenu(self, point):
@@ -142,20 +149,21 @@ class MainWindow(QMainWindow):
     def __init__(self, *args):
         super().__init__()
         self.canva = qtDisplay.qtViewer3d(self)
-        #self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
         #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
+        self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using pythonOCC-%s ('qt' backend)"%VERSION)
         self.resize(960,720)
         self.setCentralWidget(self.canva)
-        #self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
-        #self.treeDockWidget.setObjectName("treeDockWidget")
-        #self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        #self.asyPrtTree = TreeList()   # Assy/Part structure (display)
-        #self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
+        self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
+        self.treeDockWidget.setObjectName("treeDockWidget")
+        self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
+        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
+        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
         #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
-        #self.treeDockWidget.setWidget(self.asyPrtTree)
-        #self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
+        self.treeDockWidget.setWidget(self.asyPrtTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
         if not sys.platform == 'darwin':
             self.menu_bar = self.menuBar()
         else:
@@ -184,8 +192,8 @@ class MainWindow(QMainWindow):
         self.lineEdit = QLineEdit()
         self.lineEditStack = [] # list of user inputs
         #self.connect(self.lineEdit, SIGNAL("returnPressed()"), self.appendToStack)
-        
-        self.lineEdit.textChanged.connect(self.appendToStack)
+        self.lineEdit.returnPressed.connect(self.appendToStack)
+        #self.lineEdit.textChanged.connect(self.appendToStack)
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         status.addPermanentWidget(self.lineEdit)
@@ -207,11 +215,11 @@ class MainWindow(QMainWindow):
         self._currentUID = 0
         self._wpNmbr = 1
         self.drawList = [] # list of part uid's to be displayed
-        #self.tree = QTreeWidget()  # Assy/Part Structure (model)
-        #self.tree.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
-        #itemName = ['/', str(0)]
-        #self.asyPrtTreeRoot = QTreeWidgetItem(self.asyPrtTree, itemName)    # Root Item in TreeView
-        #self.asyPrtTree.expandItem(self.asyPrtTreeRoot)
+        self.tree = treelib.Tree()  # Assy/Part Structure (model)
+        self.tree.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
+        itemName = ['/', str(0)]
+        self.asyPrtTreeRoot = QTreeWidgetItem(self.asyPrtTree, itemName)    # Root Item in TreeView
+        self.asyPrtTree.expandItem(self.asyPrtTreeRoot)
         self.itemClicked = None   # TreeView item that has been mouse clicked
         self.floatStack = []  # storage stack for floating point values
         self.ptStack = []  # storage stack for point picks
@@ -1164,70 +1172,70 @@ def setUnits_in():
         
 def setUnits_mm():
     win.setUnits('mm')
-        
-app = QApplication(sys.argv)
-win = MainWindow()
-win.add_menu('File')
-win.add_function_to_menu('File', "Load STEP", win.loadStep)
-win.add_function_to_menu('File', "Save STEP (Act Prt)", win.saveStepActPrt)
-win.add_menu('Workplane')
-win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
-win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
-win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
-win.add_menu('2D Construct')
-win.add_function_to_menu('2D Construct', "Make HV cLine", makeHVcLine)
-win.add_function_to_menu('2D Construct', "Make H cLine", makeHcLine)
-win.add_function_to_menu('2D Construct', "Make Ang cLine", makeAng_cLine)
-win.add_function_to_menu('2D Construct', "line by 2 Pts", line2Pts)
-win.add_function_to_menu('2D Construct', "Linear Bisector cLine", linBisec_cLine)
-win.add_menu('2D Geometry')
-win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeWireCircle)
-win.add_function_to_menu('2D Geometry', "make Silo", silo)
-win.add_menu('Create 3D')
-win.add_function_to_menu('Create 3D', "Box", makeBox)
-win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
-win.add_menu('Modify Active Part')
-win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
-win.add_function_to_menu('Modify Active Part', "Make Hole", hole)
-win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
-win.add_function_to_menu('Modify Active Part', "Shell", shell)
-win.add_function_to_menu('Modify Active Part', "Lift Face", lift)
-win.add_menu('Utility')
-win.add_function_to_menu('Utility', "print current UID", win.printCurrUID)    
-win.add_function_to_menu('Utility', "print active part", printActPart)    
-win.add_function_to_menu('Utility', "print drawList", printDrawList)    
-win.add_function_to_menu('Utility', "Clear Stack", win.clearStack)    
-win.add_function_to_menu('Utility', "Checked inSync w/ DL?", printInSync) 
-win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
-win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 
-win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm) 
 
-drawSubMenu = QMenu('Draw')
-win.popMenu.addMenu(drawSubMenu)    
-drawSubMenu.addAction('Fit All', win.fitAll)    
-drawSubMenu.addAction('Redraw', win.redraw)    
-drawSubMenu.addAction('Hide All', win.eraseAll)    
-drawSubMenu.addAction('Draw All', win.drawAll)    
-drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    win = MainWindow()
+    win.add_menu('File')
+    win.add_function_to_menu('File', "Load STEP", win.loadStep)
+    win.add_function_to_menu('File', "Save STEP (Act Prt)", win.saveStepActPrt)
+    win.add_menu('Workplane')
+    win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
+    win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
+    win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
+    win.add_menu('2D Construct')
+    win.add_function_to_menu('2D Construct', "Make HV cLine", makeHVcLine)
+    win.add_function_to_menu('2D Construct', "Make H cLine", makeHcLine)
+    win.add_function_to_menu('2D Construct', "Make Ang cLine", makeAng_cLine)
+    win.add_function_to_menu('2D Construct', "line by 2 Pts", line2Pts)
+    win.add_function_to_menu('2D Construct', "Linear Bisector cLine", linBisec_cLine)
+    win.add_menu('2D Geometry')
+    win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeWireCircle)
+    win.add_function_to_menu('2D Geometry', "make Silo", silo)
+    win.add_menu('Create 3D')
+    win.add_function_to_menu('Create 3D', "Box", makeBox)
+    win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
+    win.add_menu('Modify Active Part')
+    win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
+    win.add_function_to_menu('Modify Active Part', "Make Hole", hole)
+    win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
+    win.add_function_to_menu('Modify Active Part', "Shell", shell)
+    win.add_function_to_menu('Modify Active Part', "Lift Face", lift)
+    win.add_menu('Utility')
+    win.add_function_to_menu('Utility', "print current UID", win.printCurrUID)    
+    win.add_function_to_menu('Utility', "print active part", printActPart)    
+    win.add_function_to_menu('Utility', "print drawList", printDrawList)    
+    win.add_function_to_menu('Utility', "Clear Stack", win.clearStack)    
+    win.add_function_to_menu('Utility', "Checked inSync w/ DL?", printInSync) 
+    win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
+    win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 
+    win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm) 
 
-#win.asyPrtTree.popMenu.addAction('Set Active', win.setActive)
-#win.asyPrtTree.popMenu.addAction('Make Transparent', win.setTransparent)
-#win.asyPrtTree.popMenu.addAction('Make Opaque', win.setOpaque)
-#win.asyPrtTree.popMenu.addAction('Edit Name', win.editName)
+    drawSubMenu = QMenu('Draw')
+    win.popMenu.addMenu(drawSubMenu)    
+    drawSubMenu.addAction('Fit All', win.fitAll)    
+    drawSubMenu.addAction('Redraw', win.redraw)    
+    drawSubMenu.addAction('Hide All', win.eraseAll)    
+    drawSubMenu.addAction('Draw All', win.drawAll)    
+    drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
 
-win.show()
-win.canva.InitDriver()
-display = win.canva._display
+    #win.asyPrtTree.popMenu.addAction('Set Active', win.setActive)
+    #win.asyPrtTree.popMenu.addAction('Make Transparent', win.setTransparent)
+    #win.asyPrtTree.popMenu.addAction('Make Opaque', win.setOpaque)
+    #win.asyPrtTree.popMenu.addAction('Edit Name', win.editName)
 
-selectSubMenu = QMenu('Select Mode')
-win.popMenu.addMenu(selectSubMenu)    
-selectSubMenu.addAction('Points', display.SetSelectionModeVertex)    
-selectSubMenu.addAction('Lines', display.SetSelectionModeEdge)    
-selectSubMenu.addAction('Faces', display.SetSelectionModeFace)    
-selectSubMenu.addAction('Shapes', display.SetSelectionModeShape)    
-selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
-win.popMenu.addAction('Clear Callback', win.clearCallback)
+    win.show()
+    win.canva.InitDriver()
+    display = win.canva._display
 
-win.raise_() # bring the app to the top
-app.exec_()
+    selectSubMenu = QMenu('Select Mode')
+    win.popMenu.addMenu(selectSubMenu)    
+    selectSubMenu.addAction('Points', display.SetSelectionModeVertex)    
+    selectSubMenu.addAction('Lines', display.SetSelectionModeEdge)    
+    selectSubMenu.addAction('Faces', display.SetSelectionModeFace)    
+    selectSubMenu.addAction('Shapes', display.SetSelectionModeShape)    
+    selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
+    win.popMenu.addAction('Clear Callback', win.clearCallback)
 
+    win.raise_() # bring the app to the top
+    app.exec_()
