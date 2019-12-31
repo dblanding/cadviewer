@@ -589,8 +589,7 @@ class MainWindow(QMainWindow):
                 context.SetTransparency(aisShape, transp, True)
                 drawer = aisShape.DynamicHilightAttributes()
                 context.HilightWithColor(aisShape, drawer, True)
-                '''
-                clClr = OCC.Display.OCCViewer.color(1,0,1)
+                clClr = OCC.Display.OCCViewer.rgb_color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline, color=clClr)
                 for point in wp.intersectPts():
@@ -599,7 +598,6 @@ class MainWindow(QMainWindow):
                     self.canva._display.DisplayShape(ccirc, color=clClr)
                 for wire in wp.wireList:
                     self.canva._display.DisplayShape(wire, color="WHITE")
-                '''
                 display.Repaint()
 
     def drawAll(self):
