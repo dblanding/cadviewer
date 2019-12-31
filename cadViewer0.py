@@ -69,6 +69,7 @@ from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.IFSelect import IFSelect_RetDone
 import OCC.Core.BRepLib as BRepLib
 import OCC.Core.BRep as BRep
+from OCC.Core import Quantity
 #import OCCUtils.Construct
 import myStepXcafReader
 import OCC.Display.OCCViewer
@@ -156,27 +157,20 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Simple CAD App using pythonOCC-%s ('qt' backend)"%VERSION)
         self.resize(960,720)
         self.setCentralWidget(self.canva)
-        self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
-        self.treeDockWidget.setObjectName("treeDockWidget")
-        self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
-        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
-        #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
-        self.treeDockWidget.setWidget(self.asyPrtTree)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
-        if not sys.platform == 'darwin':
-            self.menu_bar = self.menuBar()
-        else:
-            # create a parentless menubar see:
-            # http://stackoverflow.com/questions/11375176/qmenubar-and-qmenu-doesnt-show-in-mac-os-x?lq=1
-            # noticeable is that the menu ( alas ) is created in the topleft of the screen,
-            # just next to the apple icon
-            # still does ugly things like showing the "Python" menu in bold
-            self.menu_bar = QMenuBar()
+        self.createDockWidget()
+        self.wpToolBar = QToolBar("2D")
+        self.addToolBar(Qt.RightToolBarArea, self.wpToolBar)
+        self.wpToolBar.setMovable(True)
+        if sys.platform == 'darwin':
+            QtGui.qt_mac_set_native_menubar(False)
+        self.menu_bar = self.menuBar()
         self._menus = {}
         self._menu_methods = {}
-        # place the window in the center of the screen, at half the screen size
         self.centerOnScreen()
+        # Internally, everything is always in mm
+        # scale user input and output values
+        # (user input values) * unitscale = value in mm
+        # (output values) / unitscale = value in user's units
         self._unitDict = {'mm': 1.0, 'in': 25.4, 'ft': 304.8}
         self.units = 'mm'
         self.unitscale = self._unitDict[self.units]
@@ -228,6 +222,16 @@ class MainWindow(QMainWindow):
         self.context = None
         self.calculator = None
         
+    def createDockWidget(self):
+        self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
+        self.treeDockWidget.setObjectName("treeDockWidget")
+        self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
+        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
+        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
+        #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
+        self.treeDockWidget.setWidget(self.asyPrtTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
+
     ####  PyQt general & menuBar:
 
     def launchCalc(self):
@@ -492,7 +496,7 @@ class MainWindow(QMainWindow):
             self.activeWpUID = uid
         self._nameDict[uid] = name
         # add item to treeView
-        itemName = QStringList([name, str(uid)])
+        itemName = [name, str(uid)]
         item = QTreeWidgetItem(self.asyPrtTreeRoot, itemName)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
@@ -549,7 +553,7 @@ class MainWindow(QMainWindow):
         if not self.registeredCallback:
             display.SetSelectionModeNeutral()
             context.SetAutoActivateSelection(False)
-        context.RemoveAll()
+        context.RemoveAll(True)
         for uid in self.drawList:
             if uid in self._partDict.keys():
                 if uid in self._transparencyDict.keys():
@@ -558,27 +562,25 @@ class MainWindow(QMainWindow):
                     transp = 0
                 color = self._colorDict[uid]
                 aisShape = AIS_Shape(self._partDict[uid])
-                h_aisShape = aisShape.GetHandle()
-                context.Display(h_aisShape)
-                context.SetColor(h_aisShape, color)
-                context.SetTransparency(h_aisShape, transp)
+                context.Display(aisShape, True)
+                context.SetColor(aisShape, color, True)
+                context.SetTransparency(aisShape, transp, True)
                 if uid == self.activePartUID:
-                    edgeColor = OCC.Quantity.Quantity_NOC_RED
+                    edgeColor = Quantity.Quantity_NOC_RED
                 else:
-                    edgeColor = OCC.Quantity.Quantity_NOC_BLACK
-                context.HilightWithColor(h_aisShape, edgeColor)
+                    edgeColor = Quantity.Quantity_NOC_BLACK
+                #context.HilightWithColor(aisShape, edgeColor, True)
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
                 border = wp.border
                 aisShape = AIS_Shape(border)
-                h_aisShape = aisShape.GetHandle()
-                context.Display(h_aisShape)
+                context.Display(aisShape)
                 if uid == self.activeWpUID:
-                    borderColor = OCC.Quantity.Quantity_NOC_DARKGREEN
+                    borderColor = Quantity.Quantity_NOC_DARKGREEN
                 else:
-                    borderColor = OCC.Quantity.Quantity_NOC_GRAY
-                context.SetColor(h_aisShape, borderColor)
-                context.SetTransparency(h_aisShape, 0.8)
+                    borderColor = Quantity.Quantity_NOC_GRAY
+                context.SetColor(aisShape, borderColor)
+                context.SetTransparency(aisShape, 0.8)
                 
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline)
@@ -635,7 +637,8 @@ class MainWindow(QMainWindow):
         3. Paste the loaded tree onto win.tree (treeModel)
         """
         prompt = 'Select STEP file to import'
-        fname = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fnametuple = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fname, _ = fnametuple
         if not fname:
             print("Load step cancelled")
             return
@@ -648,7 +651,7 @@ class MainWindow(QMainWindow):
         for uid in tree.expand_tree(mode=self.tree.DEPTH):
             node = tree.get_node(uid)
             name = node.tag
-            itemName = QStringList([name, str(uid)])
+            itemName = [name, str(uid)]
             parentUid = node.bpointer
             if node.data['a']:  # Assembly
                 if not parentUid: # This is the top level item
@@ -677,9 +680,9 @@ class MainWindow(QMainWindow):
                 self._partDict[uid] = shape
                 self._nameDict[uid] = name
                 if color:
-                    c = OCC.Display.OCCViewer.color(color.Red(), color.Green(), color.Blue())
+                    c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
                 else:
-                    c = OCC.Display.OCCViewer.color(.2,.1,.1)   # default color
+                    c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
                 self._colorDict[uid] = c
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
@@ -687,6 +690,7 @@ class MainWindow(QMainWindow):
         self.tree.paste(0, tree) # Paste tree onto win.tree root
         
         keyList = tempTreeDict.keys()
+        keyList = list(keyList)
         keyList.sort()
         maxUID = keyList[-1]
         self._currentUID = maxUID
