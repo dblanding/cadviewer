@@ -77,11 +77,13 @@ from OCC.Core.IFSelect import IFSelect_RetDone
 from OCCUtils import Construct, Topology
 from OCC.Core.IGESControl import *
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
+                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
+                               Quantity_NOC_DARKGREEN)
 import myStepXcafReader
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 from OCC import VERSION
-from OCC.Core import Quantity
 print("OCC version: %s" % VERSION)
 
 used_backend = OCC.Display.backend.load_backend()
@@ -446,7 +448,7 @@ class MainWindow(QMainWindow):
         # Update appropriate dictionaries and add node to treeModel
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
-            if color:   # Quantity.Quantity_Color()
+            if color:   # Quantity_Color()
                 c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
                 c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
@@ -568,25 +570,25 @@ class MainWindow(QMainWindow):
                 context.SetTransparency(aisShape, transp, True)
                 drawer = aisShape.DynamicHilightAttributes()
                 if uid == self.activePartUID:
-                    edgeColor = Quantity.Quantity_NOC_RED
+                    edgeColor = Quantity_Color(Quantity_NOC_RED)
                 else:
-                    edgeColor = Quantity.Quantity_NOC_BLACK
+                    edgeColor = Quantity_Color(Quantity_NOC_BLACK)
                 context.HilightWithColor(aisShape, drawer, True)
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
                 border = wp.border
                 if uid == self.activeWpUID:
-                    #borderColor = Quantity.Quantity_NOC_DARKGREEN
-                    borderColor = Quantity.Quantity_Color(20)
+                    borderColor = Quantity_Color(Quantity_NOC_DARKGREEN)
                 else:
-                    borderColor = Quantity.Quantity_NOC_GRAY
-                #context.SetColor(aisShape, borderColor, True)
-                #context.Display(aisShape, True)
-                #context.SetTransparency(h_aisShape, 0.8, True)
+                    borderColor = Quantity_Color(Quantity_NOC_GRAY)
                 aisShape = AIS_Shape(border)
-                drawer = Prs3d_Drawer()
-                aisShape.SetAttributes(drawer)
-                aisShape.SetColor(borderColor)
+                context.Display(aisShape, True)
+                context.SetColor(aisShape, borderColor, True)
+                # Set shape transparency, a float from 0.0 to 1.0
+                transp = 0.8
+                context.SetTransparency(aisShape, transp, True)
+                drawer = aisShape.DynamicHilightAttributes()
+                context.HilightWithColor(aisShape, drawer, True)
                 '''
                 clClr = OCC.Display.OCCViewer.color(1,0,1)
                 for cline in wp.clineList:

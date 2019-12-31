@@ -464,10 +464,10 @@ class MainWindow(QMainWindow):
         # Update appropriate dictionaries and add node to treeModel
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
-            if color:   # OCC.Quantity.Quantity_Color()
-                c = OCC.Display.OCCViewer.color(color.Red(), color.Green(), color.Blue())
+            if color:   # Quantity.Quantity_Color()
+                c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
-                c = OCC.Display.OCCViewer.color(.2,.1,.1)   # default color
+                c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
