@@ -65,11 +65,13 @@ from OCC.Core.IntAna2d import *
 from OCC.Core.BRepAdaptor import *
 from OCC.Core.CPnts import *
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
+                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
+                               Quantity_NOC_DARKGREEN)
 from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.IFSelect import IFSelect_RetDone
 import OCC.Core.BRepLib as BRepLib
 import OCC.Core.BRep as BRep
-from OCC.Core import Quantity
 #import OCCUtils.Construct
 import myStepXcafReader
 import OCC.Display.OCCViewer
@@ -464,7 +466,7 @@ class MainWindow(QMainWindow):
         # Update appropriate dictionaries and add node to treeModel
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
-            if color:   # Quantity.Quantity_Color()
+            if color:   # Quantity_Color()
                 c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
                 c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
@@ -523,7 +525,7 @@ class MainWindow(QMainWindow):
             self.clearCallback()
         display.register_select_callback(callback)
         self.registeredCallback = callback
-        self.currOpLabel.setText("Current Operation: %s " % callback.func_name[:-1])
+        self.currOpLabel.setText("Current Operation: %s " % callback.__name__[:-1])
             
     def clearCallback(self):
         if self.registeredCallback:
@@ -540,7 +542,7 @@ class MainWindow(QMainWindow):
 
     def eraseAll(self):
         context = self.canva._display.Context
-        context.RemoveAll()
+        context.RemoveAll(True)
         self.drawList = []
         self.syncCheckedToDrawList()
     
@@ -564,24 +566,30 @@ class MainWindow(QMainWindow):
                 aisShape = AIS_Shape(self._partDict[uid])
                 context.Display(aisShape, True)
                 context.SetColor(aisShape, color, True)
+                # Set shape transparency, a float from 0.0 to 1.0
                 context.SetTransparency(aisShape, transp, True)
+                drawer = aisShape.DynamicHilightAttributes()
                 if uid == self.activePartUID:
-                    edgeColor = Quantity.Quantity_NOC_RED
+                    edgeColor = Quantity_Color(Quantity_NOC_RED)
                 else:
-                    edgeColor = Quantity.Quantity_NOC_BLACK
-                #context.HilightWithColor(aisShape, edgeColor, True)
+                    edgeColor = Quantity_Color(Quantity_NOC_BLACK)
+                context.HilightWithColor(aisShape, drawer, True)
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
                 border = wp.border
-                aisShape = AIS_Shape(border)
-                context.Display(aisShape)
                 if uid == self.activeWpUID:
-                    borderColor = Quantity.Quantity_NOC_DARKGREEN
+                    borderColor = Quantity_Color(Quantity_NOC_DARKGREEN)
                 else:
-                    borderColor = Quantity.Quantity_NOC_GRAY
-                context.SetColor(aisShape, borderColor)
-                context.SetTransparency(aisShape, 0.8)
-                
+                    borderColor = Quantity_Color(Quantity_NOC_GRAY)
+                aisShape = AIS_Shape(border)
+                context.Display(aisShape, True)
+                context.SetColor(aisShape, borderColor, True)
+                # Set shape transparency, a float from 0.0 to 1.0
+                transp = 0.8
+                context.SetTransparency(aisShape, transp, True)
+                drawer = aisShape.DynamicHilightAttributes()
+                context.HilightWithColor(aisShape, drawer, True)
+                clClr = OCC.Display.OCCViewer.rgb_color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline)
                 for point in wp.intersectPts():
