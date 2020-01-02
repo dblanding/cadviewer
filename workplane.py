@@ -359,7 +359,6 @@ class WorkPlane(object):
             gpPlane = gp_Pln(xyzAx3)
             self.gpPlane = gpPlane              # type: gp_Pln
             self.plane = Geom_Plane(gpPlane)    # type: Geom_Plane
-            #self.surface = Handle_Geom_Surface(Geom_Plane(gpPlane)) # type: Handle_Geom_Surface
         elif face:  # create workplane on face, uDir defined by faceU
             wDir = face_normal(face)  # from OCCUtils.Construct module
             props = OCC.Core.GProp.GProp_GProps()
@@ -376,8 +375,6 @@ class WorkPlane(object):
             vDir = axis3.YDirection()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
-            #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
-            self.surface = BRep_Tool_Surface(face) # type: Handle_Geom_Surface
         elif ax3:
             axis3 = ax3
             uDir = axis3.XDirection()
@@ -386,8 +383,6 @@ class WorkPlane(object):
             origin = axis3.Location()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
-            #breakpoint()
-            #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
             
         self.Trsf = gp_Trsf()
         self.Trsf.SetTransformation(axis3)
@@ -417,10 +412,10 @@ class WorkPlane(object):
         seg2 = GCE2d_MakeSegment(p2, p3)
         seg3 = GCE2d_MakeSegment(p3, p4)
         seg4 = GCE2d_MakeSegment(p4, p1)
-        e1 = BRepBuilderAPI_MakeEdge(seg1.Value(), self.surface)
-        e2 = BRepBuilderAPI_MakeEdge(seg2.Value(), self.surface)
-        e3 = BRepBuilderAPI_MakeEdge(seg3.Value(), self.surface)
-        e4 = BRepBuilderAPI_MakeEdge(seg4.Value(), self.surface)
+        e1 = BRepBuilderAPI_MakeEdge(seg1.Value(), self.plane)
+        e2 = BRepBuilderAPI_MakeEdge(seg2.Value(), self.plane)
+        e3 = BRepBuilderAPI_MakeEdge(seg3.Value(), self.plane)
+        e4 = BRepBuilderAPI_MakeEdge(seg4.Value(), self.plane)
         aWire = BRepBuilderAPI_MakeWire(e1.Edge(), e2.Edge(), e3.Edge(), e4.Edge())
         myWireProfile = aWire.Wire()
         return myWireProfile  # TopoDS_Wire
@@ -432,15 +427,6 @@ class WorkPlane(object):
             border = myFaceProfile.Face()
         return border  # TopoDS_Face
 
-    def makeWpBorderAlt(self, size): # This doesn't produce a visible border
-        wireProfile = self.makeSqProfile(size)
-        mkf = BRepBuilderAPI_MakeFace()
-        mkf.Init(self.surface, False, 1e-6)
-        mkf.Add(wireProfile)
-        mkf.Build()
-        if mkf.IsDone():
-            border = mkf.Face()
-        return border
 
     #=======================================================================
     # Construction
