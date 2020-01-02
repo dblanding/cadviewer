@@ -187,9 +187,7 @@ class MainWindow(QMainWindow):
         self.currOpLabel.setText("Current Operation: %s " % self.registeredCallback)
         self.lineEdit = QLineEdit()
         self.lineEditStack = [] # list of user inputs
-        #self.connect(self.lineEdit, SIGNAL("returnPressed()"), self.appendToStack)
         self.lineEdit.returnPressed.connect(self.appendToStack)
-        #self.lineEdit.textChanged.connect(self.appendToStack)
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         status.addPermanentWidget(self.lineEdit)

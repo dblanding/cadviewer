@@ -44,7 +44,7 @@ import treelib
 import workplane
 import rpnCalculator
 from OCC.Core.AIS import AIS_Shape
-from OCC.Core.BRep import *
+from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import *
 from OCC.Core.BRepAlgoAPI import *
 from OCC.Core.BRepBuilderAPI import *
@@ -202,8 +202,7 @@ class MainWindow(QMainWindow):
         self.currOpLabel.setText("Current Operation: %s " % self.registeredCallback)
         self.lineEdit = QLineEdit()
         self.lineEditStack = [] # list of user inputs
-        #self.connect(self.lineEdit, SIGNAL("returnPressed()"), self.appendToStack)
-        #self.lineEdit.completed.connect(self.appendToStack)
+        self.lineEdit.returnPressed.connect(self.appendToStack)
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         status.addPermanentWidget(self.lineEdit)
@@ -728,21 +727,15 @@ class MainWindow(QMainWindow):
 #
 #############################################
 
-def wpBy3Pts(initial=True):
+        
+def wpBy3Pts(*args):
     """
-    Pick 3 points (vertices).
     Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
-    Direction from pt2 to pt3 sets uDir
+    direction from pt2 to pt3 sets uDir
     """
-    if initial:
-        win.registerCallback(wpBy3PtsC)
-        display.selected_shape = None
-        display.SetSelectionModeVertex()
-        win.ptStack = []
-        statusText = "Pick 3 points. Dir from pt1-pt2 sets wDir, pt2 is origin."
-        win.statusBar().showMessage(statusText)
-        return
+    print(f'args = {args}')
     if win.ptStack:
+        # Finish
         p3 = win.ptStack.pop()
         p2 = win.ptStack.pop()
         p1 = win.ptStack.pop()
@@ -757,8 +750,17 @@ def wpBy3Pts(initial=True):
         win.clearCallback()
         statusText = "Workplane created."
         win.statusBar().showMessage(statusText)
+    else:
+        # Initial setup
+        win.registerCallback(wpBy3PtsC)
+        display.selected_shape = None
+        display.SetSelectionModeVertex()
+        statusText = "Pick 3 points. Dir from pt1-pt2 sets wDir, pt2 is origin."
+        win.statusBar().showMessage(statusText)
+        return
         
-def wpBy3PtsC(shapeList, *kwargs):  # callback (collector) for wpBy3Pts
+def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
+    print(f'args = {args}')
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -770,21 +772,19 @@ def wpBy3PtsC(shapeList, *kwargs):  # callback (collector) for wpBy3Pts
         statusText = "Now select point 3 to set uDir."
         win.statusBar().showMessage(statusText)
     elif (len(win.ptStack) == 3):
-        wpBy3Pts(initial=False)
+        wpBy3Pts()
 
-def wpOnFace(initial=True):
+def wpOnFace(*args): # This doesn't work reliably. See Workplane class.
+    """ First face defines plane of wp. Second face defines uDir.
     """
-    Pick 2 faces. First face defines plane of wp. Second face defines uDir.
-    """
-    if initial:
+    if not win.faceStack:
         win.registerCallback(wpOnFaceC)
         display.selected_shape = None
         display.SetSelectionModeFace()
-        win.faceStack = []
-        statusText = "Select face for workplane. (WP origin in cntr of face.)"
+        statusText = "Select face for workplane."
         win.statusBar().showMessage(statusText)
         return
-    if win.faceStack:
+    else:
         faceU = win.faceStack.pop()
         faceW = win.faceStack.pop()
         wp = workplane.WorkPlane(100, face=faceW, faceU=faceU)
@@ -793,17 +793,20 @@ def wpOnFace(initial=True):
         statusText = "Workplane created."
         win.statusBar().showMessage(statusText)
         
-def wpOnFaceC(shapeList, *kwargs):  # callback (collector) for wpOnFace
+def wpOnFaceC(shapeList=None, *args):  # callback (collector) for wpOnFace
+    if not shapeList:
+        shapeList = []
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
+        print(type(shape))
         face = topods_Face(shape)
         win.faceStack.append(face)
     if (len(win.faceStack) == 1):
         statusText = "Select face for workplane U direction."
         win.statusBar().showMessage(statusText)
     elif (len(win.faceStack) == 2):
-        wpOnFace(initial=False)
+        wpOnFace()
 
 def makeWP():   # Default workplane located in X-Y plane at 0,0,0
     wp = workplane.WorkPlane(100)
