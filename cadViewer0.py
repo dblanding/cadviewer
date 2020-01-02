@@ -724,19 +724,14 @@ class MainWindow(QMainWindow):
         
 # Workplane creation functions...
 
-def wpBy3Pts(initial=True):
+def wpBy3Pts(*args):
     """
     Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
     direction from pt2 to pt3 sets uDir
     """
-    if initial:
-        win.registerCallback(wpBy3PtsC)
-        display.selected_shape = None
-        display.SetSelectionModeVertex()
-        statusText = "Pick 3 points. Dir from pt1-pt2 sets wDir, pt2 is origin."
-        win.statusBar().showMessage(statusText)
-        return
+    print(f'args = {args}')
     if win.ptStack:
+        # Finish
         p3 = win.ptStack.pop()
         p2 = win.ptStack.pop()
         p1 = win.ptStack.pop()
@@ -751,8 +746,17 @@ def wpBy3Pts(initial=True):
         win.clearCallback()
         statusText = "Workplane created."
         win.statusBar().showMessage(statusText)
+    else:
+        # Initial setup
+        win.registerCallback(wpBy3PtsC)
+        display.selected_shape = None
+        display.SetSelectionModeVertex()
+        statusText = "Pick 3 points. Dir from pt1-pt2 sets wDir, pt2 is origin."
+        win.statusBar().showMessage(statusText)
+        return
         
-def wpBy3PtsC(shapeList, *kwargs):  # callback (collector) for wpBy3Pts
+def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
+    print(f'args = {args}')
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep.BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -764,19 +768,19 @@ def wpBy3PtsC(shapeList, *kwargs):  # callback (collector) for wpBy3Pts
         statusText = "Now select point 3 to set uDir."
         win.statusBar().showMessage(statusText)
     elif (len(win.ptStack) == 3):
-        wpBy3Pts(initial=False)
+        wpBy3Pts()
 
-def wpOnFace(initial=True): # This doesn't work reliably. See Workplane class.
+def wpOnFace(*args): # This doesn't work reliably. See Workplane class.
     """ First face defines plane of wp. Second face defines uDir.
     """
-    if initial:
+    if not win.faceStack:
         win.registerCallback(wpOnFaceC)
         display.selected_shape = None
         display.SetSelectionModeFace()
         statusText = "Select face for workplane."
         win.statusBar().showMessage(statusText)
         return
-    if win.faceStack:
+    else:
         faceU = win.faceStack.pop()
         faceW = win.faceStack.pop()
         wp = workplane.WorkPlane(100, face=faceW, faceU=faceU)
@@ -785,9 +789,11 @@ def wpOnFace(initial=True): # This doesn't work reliably. See Workplane class.
         statusText = "Workplane created."
         win.statusBar().showMessage(statusText)
         
-def wpOnFaceC(shapeList, *kwargs):  # callback (collector) for wpOnFace
-    print(shapelist)
-    print(kwargs)
+def wpOnFaceC(shapeList=None, *args):  # callback (collector) for wpOnFace
+    if not shapeList:
+        shapeList = []
+    print(shapeList)
+    print(args)
     for shape in shapeList:
         print(type(shape))
         face = topods_Face(shape)
@@ -796,7 +802,7 @@ def wpOnFaceC(shapeList, *kwargs):  # callback (collector) for wpOnFace
         statusText = "Select face for workplane U direction."
         win.statusBar().showMessage(statusText)
     elif (len(win.faceStack) == 2):
-        wpOnFace(initial=False)
+        wpOnFace()
 
 def makeWP():
     wp = workplane.WorkPlane(100)
@@ -817,8 +823,8 @@ def makeAng_cLine():
     win.activeWp.acl((0,10), ang=30)
     win.redraw()
 
-def linBisec_cLine(initial=True):
-    if initial:
+def linBisec_cLine(initial=False):
+    if not initial:
         win.registerCallback(linBisec_cLineC)
         display.SetSelectionModeVertex()
     if len(win.ptStack) == 2:
@@ -846,8 +852,8 @@ def linBisec_cLineC(shapeList, *kwargs):  # callback (collector) for line2Pts
     if len(win.ptStack) == 2:
         linBisec_cLine(initial=False)
 
-def makeWireCircle(initial=True):
-    if initial:
+def makeWireCircle(initial=False):
+    if not initial:
         win.registerCallback(makeWireCircleC)
         display.SetSelectionModeVertex()
         display.SetSelectionModeShape() #This allows selection of intersection points
@@ -864,16 +870,17 @@ def makeWireCircle(initial=True):
 def makeWireCircleC(shapeList, *kwargs):  # callback (collector) for makeWireCircle
     print(shapelist)
     print(kwargs)
+    breakpoint()
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         print(type(vrtx))
         gpPt = BRep.BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if win.ptStack:
-        makeWireCircle(initial=False)
+        makeWireCircle(initial=True)
 
-def line2Pts(initial=True):
-    if initial:
+def line2Pts(initial=False):
+    if not initial:
         win.registerCallback(line2PtsC)
         display.SetSelectionModeVertex()
     if len(win.ptStack) == 2:

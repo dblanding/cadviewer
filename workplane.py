@@ -12,6 +12,7 @@ from OCC.Core.BRepTools import breptools_UVBounds
 from OCC.Core.TopAbs import TopAbs_REVERSED
 import OCC.Core.BRepGProp
 import OCC.Core.GProp
+from OCCUtils.Construct import face_normal
 
 #===========================================================================
 # 
@@ -342,7 +343,7 @@ class WorkPlane(object):
     A 2D plane for making 2D profiles to create and modify 3D geometry.
     Workplane is defined by an (invisible) underlying surface of type=Geom_Plane.
     There are three typical ways for creating a new workplane:
-    1- Lying in an existing face, with U-dir specified by normal dir of another face
+    1- Lying on an existing face, with U-dir specified by normal dir of another face
     2- By specification of a gp_Ax3 axis
     3- Default (located at the Origin in the X-Y plane, with U,V,W aligned with X,Y,Z)
     """
@@ -360,9 +361,9 @@ class WorkPlane(object):
             self.plane = Geom_Plane(gpPlane)    # type: Geom_Plane
             #self.surface = Handle_Geom_Surface(Geom_Plane(gpPlane)) # type: Handle_Geom_Surface
         elif face:  # create workplane on face, uDir defined by faceU
-            wDir = Construct.face_normal(face)
-            props = OCC.GProp.GProp_GProps()
-            OCC.BRepGProp.brepgprop_SurfaceProperties(face, props)
+            wDir = face_normal(face)  # from OCCUtils.Construct module
+            props = OCC.Core.GProp.GProp_GProps()
+            OCC.Core.BRepGProp.brepgprop_SurfaceProperties(face, props)
             origin = props.CentreOfMass()
             '''
             surface = BRep_Tool_Surface(face) # type: Handle_Geom_Surface
@@ -370,12 +371,13 @@ class WorkPlane(object):
             gpPlane = plane.Pln() # type: gp_Pln
             origin = gpPlane.Location() # type: gp_Pnt
             '''
-            uDir = OCCUtils.Construct.face_normal(faceU)
+            uDir = face_normal(faceU)  # from OCCUtils.Construct module
             axis3 = gp_Ax3(origin, wDir, uDir)
             vDir = axis3.YDirection()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
             #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
+            self.surface = BRep_Tool_Surface(face) # type: Handle_Geom_Surface
         elif ax3:
             axis3 = ax3
             uDir = axis3.XDirection()
@@ -384,6 +386,7 @@ class WorkPlane(object):
             origin = axis3.Location()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
+            #breakpoint()
             #self.surface = Handle_Geom_Surface(self.plane) # type: Handle_Geom_Surface
             
         self.Trsf = gp_Trsf()
@@ -439,7 +442,28 @@ class WorkPlane(object):
             raise AssertionError("wire is not done.")
         # BRepBuilderAPI_MakeWire object cast into a type TopoDS_Wire using the Wire() method.
         return mw.Wire()
-
+    '''
+    def makeSqProfile(self, size):
+        # Using 2D points on a surface
+        # points and segments need to be in CW sequence to get W pointing along Z
+        p1 = gp_Pnt2d(-size, size)
+        p2 = gp_Pnt2d(size, size)
+        p3 = gp_Pnt2d(size, -size)
+        p4 = gp_Pnt2d(-size, -size)
+        seg1 = GCE2d_MakeSegment(p1, p2)  # type: GCE2d_MakeSegment
+        seg2 = GCE2d_MakeSegment(p2, p3)
+        seg3 = GCE2d_MakeSegment(p3, p4)
+        seg4 = GCE2d_MakeSegment(p4, p1)
+        breakpoint()
+        gc1 = geomapi_To3d(seg1.Value(), self.gpPlane) # type: Geom_Curve
+        gc2 = geomapi_To3d(seg2.Value(), self.gpPlane)
+        gc3 = geomapi_To3d(seg3.Value(), self.gpPlane)
+        gc4 = geomapi_To3d(seg4.Value(), self.gpPlane)
+        breakpoint()
+        aWire = BRepBuilderAPI_MakeWire(gc1.Edge(), gc2.Edge(), gc3.Edge(), gc4.Edge())
+        myWireProfile = aWire.Wire()
+        return myWireProfile # TopoDS_Wire
+    '''
     def makeWpBorderAlt(self, size): # This doesn't produce a visible border
         wireProfile = self.makeSqProfile(size)
         mkf = BRepBuilderAPI_MakeFace()
