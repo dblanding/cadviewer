@@ -423,47 +423,15 @@ class WorkPlane(object):
         e4 = BRepBuilderAPI_MakeEdge(seg4.Value(), self.surface)
         aWire = BRepBuilderAPI_MakeWire(e1.Edge(), e2.Edge(), e3.Edge(), e4.Edge())
         myWireProfile = aWire.Wire()
-        return myWireProfile # TopoDS_Wire
+        return myWireProfile  # TopoDS_Wire
 
-    def makeSqProfile(self, size):
-        # points and segments need to be in CW sequence to get W pointing along Z
-        p1 = gp_Pnt(-size, size, 0)
-        p2 = gp_Pnt(size, size, 0)
-        p3 = gp_Pnt(size, -size, 0)
-        p4 = gp_Pnt(-size, -size, 0)
-        # Four edges
-        me1 = BRepBuilderAPI_MakeEdge(p1, p2)
-        me2 = BRepBuilderAPI_MakeEdge(p2, p3)
-        me3 = BRepBuilderAPI_MakeEdge(p3, p4)
-        me4 = BRepBuilderAPI_MakeEdge(p4, p1)
-        # BRepBuilderAPI_MakeEdge objects cast into type TopoDS_Edge using the Edge() method.
-        mw = BRepBuilderAPI_MakeWire(me1.Edge(), me2.Edge(), me3.Edge(), me4.Edge())
-        if not mw.IsDone():
-            raise AssertionError("wire is not done.")
-        # BRepBuilderAPI_MakeWire object cast into a type TopoDS_Wire using the Wire() method.
-        return mw.Wire()
-    '''
-    def makeSqProfile(self, size):
-        # Using 2D points on a surface
-        # points and segments need to be in CW sequence to get W pointing along Z
-        p1 = gp_Pnt2d(-size, size)
-        p2 = gp_Pnt2d(size, size)
-        p3 = gp_Pnt2d(size, -size)
-        p4 = gp_Pnt2d(-size, -size)
-        seg1 = GCE2d_MakeSegment(p1, p2)  # type: GCE2d_MakeSegment
-        seg2 = GCE2d_MakeSegment(p2, p3)
-        seg3 = GCE2d_MakeSegment(p3, p4)
-        seg4 = GCE2d_MakeSegment(p4, p1)
-        breakpoint()
-        gc1 = geomapi_To3d(seg1.Value(), self.gpPlane) # type: Geom_Curve
-        gc2 = geomapi_To3d(seg2.Value(), self.gpPlane)
-        gc3 = geomapi_To3d(seg3.Value(), self.gpPlane)
-        gc4 = geomapi_To3d(seg4.Value(), self.gpPlane)
-        breakpoint()
-        aWire = BRepBuilderAPI_MakeWire(gc1.Edge(), gc2.Edge(), gc3.Edge(), gc4.Edge())
-        myWireProfile = aWire.Wire()
-        return myWireProfile # TopoDS_Wire
-    '''
+    def makeWpBorder(self, size):
+        wireProfile = self.makeSqProfile(size)
+        myFaceProfile = BRepBuilderAPI_MakeFace(wireProfile)
+        if myFaceProfile.IsDone():
+            border = myFaceProfile.Face()
+        return border  # TopoDS_Face
+
     def makeWpBorderAlt(self, size): # This doesn't produce a visible border
         wireProfile = self.makeSqProfile(size)
         mkf = BRepBuilderAPI_MakeFace()
@@ -473,13 +441,6 @@ class WorkPlane(object):
         if mkf.IsDone():
             border = mkf.Face()
         return border
-
-    def makeWpBorder(self, size):
-        wireProfile = self.makeSqProfile(size)
-        myFaceProfile = BRepBuilderAPI_MakeFace(wireProfile)
-        if myFaceProfile.IsDone():
-            border = myFaceProfile.Face()
-        return border # TopoDS_Face
 
     #=======================================================================
     # Construction
