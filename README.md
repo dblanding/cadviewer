@@ -5,12 +5,13 @@ This repo is like an old attic in a sense. It contains various code that I have
 written as I have experimented with what and how I might go about writing
 a CAD application built on PythonOCC.  I decided to post it on GitHub.
 
-I stumbled across some work I did a few years ago, trying to build a simple CAD app
-using PythonOCC. Having not looked at it in over 3 years, I wasn't sure it would be
-worth the trouble to get it running on the latest version of PyhonOCC and Python 3.
+I stumbled across some work I did a few years ago, where I started to build a simple
+CAD app using PythonOCC running on Python 2.7 using PyQt4. Having not looked at it in
+over 3 years, I wasn't sure it would be worth the trouble to get it working again with
+PyhonOCC version 7.4.0 while switching to Python 3 and PyQt5 all at once.
 A screenshot from some old code posted online:
 https://sites.google.com/site/pythonocc/cadviewer
-reminds me that I was using PythonOCC version 0.16.3-dev at the time. 
+reminds me that I was using PythonOCC version 0.16.3-dev at that time. 
 With the recent release of PyOCC version7.4.0-beta, I decided to give it a go.
 I asked Thomas Paviot for useful resources to help me understand the changes
 in the API from version 0.16 to the current version. His advice was very helpful:
@@ -27,9 +28,12 @@ pythonocc-0.16.3 is 4 years old, in the meantime code has changed because of :
 2. There is not Handle anymore. GetHandle and GetObject methods have disappeared. Just pass the object itself, the wrapper decides wether it has to pass the Handle or the Object to the C++ layer. You can check this commit (https://github.com/tpaviot/pythonocc-demos/commit/e59acdce5720d84ce76134789b48c268e36446d6#diff-68b70730ce65eb74e098809766ab3d0d), where we ported the old 'occ bottle example'.
 """
 
-Here is my progress (so far) on getting it running again:
-
-cadViewer.py produces the main GUI (but still crashes when the buttons are clicked).
-
-got import STEP kind of working, but part names are still broken.
-
+Jan 2, 2020:  Progress has been better than I had hoped.
+The basic GUI is all there with all the widgets,
+STEP files can be loaded and they show up both in the display and with their correct assembly structure in the assembly/parts tree
+The RMB context menu works,
+Workplanes can be created using three different methods,
+The calculator works and seems to be communicating with the main window.
+Hopefully, I'll gst most of the toolbar buttons working in a couple more weeks...
+Once I get everything working again, I'll assign it a version number.
+-Doug 
