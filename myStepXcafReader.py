@@ -51,7 +51,7 @@ import OCC.Core.XSControl
 from OCC.Extend.TopologyUtils import TopologyExplorer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO) # set to DEBUG | INFO | ERROR
 
 class StepXcafImporter(object):
     """

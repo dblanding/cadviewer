@@ -27,60 +27,56 @@
 
 from __future__ import absolute_import
 
-import logging
-import sys
-import os, os.path
-import math
 from itertools import islice
+import logging
+import math
+import os, os.path
+import sys
+import myStepXcafReader
+import rpnCalculator
+import treelib
+import workplane
+from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QMenu, QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
-                             QToolBar, QFileDialog, QAbstractItemView)
-from PyQt5.QtGui import QIcon
-from PyQt5 import QtGui
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
-import treelib
-import workplane
-import rpnCalculator
+                             QToolBar, QFileDialog, QAbstractItemView,
+                             QInputDialog)
 from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import BRep_Tool
-from OCC.Core.BRepAdaptor import *
-from OCC.Core.BRepAlgoAPI import *
-from OCC.Core.BRepBuilderAPI import *
-from OCC.Core.BRepFeat import *
-from OCC.Core.BRepFill import *
-from OCC.Core.BRepFilletAPI import *
-from OCC.Core.BRepLib import *
-from OCC.Core.BRepPrimAPI import *
-from OCC.Core.BRepOffsetAPI import *
-from OCC.Core.gp import *
-from OCC.Core.GC import *
-from OCC.Core.Geom import *
-from OCC.Core.Geom2d import *
-from OCC.Core.GeomAPI import *
-from OCC.Core.GeomLib import *
-from OCC.Core.GCE2d import *
-from OCC.Core.Prs3d import Prs3d_Drawer
-from OCC.Core.TopoDS import *
-from OCC.Core.TopExp import *
-from OCC.Core.TopAbs import *
-from OCC.Core.TopTools import *
-from OCC.Core.TopLoc import *
-from OCC.Core.Standard import *
-from OCC.Core.IntAna2d import *
-from OCC.Core.CPnts import *
-from OCC.Core.IntAna import IntAna_IntConicQuad
-from OCC.Core.Precision import precision_Angular, precision_Confusion
-from OCC.Core.Interface import Interface_Static_SetCVal
+from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
+                                     BRepBuilderAPI_MakeFace,
+                                     BRepBuilderAPI_MakeSolid,
+                                     BRepBuilderAPI_MakeWire,
+                                     BRepBuilderAPI_Sewing,
+                                     BRepBuilderAPI_Transform)
+from OCC.Core.BRepFill import brepfill
+from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
+from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism,
+                                  BRepPrimAPI_MakeCylinder) 
+from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
+from OCC.Core.CPnts import CPnts_AbscissaPoint_Length
+from OCC.Core.gp import (gp_Ax1, gp_Ax3, gp_Dir, gp_Lin, gp_Pln,
+                         gp_Pnt, gp_Trsf, gp_Vec)
+from OCC.Core.GC import GC_MakeSegment
+from OCC.Core.GeomAPI import GeomAPI_IntSS
 from OCC.Core.IFSelect import IFSelect_RetDone
-from OCCUtils import Construct, Topology
-from OCC.Core.IGESControl import *
+from OCC.Core.IntAna import IntAna_IntConicQuad
+from OCC.Core.Interface import Interface_Static_SetCVal
+from OCC.Core.Precision import precision_Angular, precision_Confusion
+from OCC.Core.Prs3d import Prs3d_Drawer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
+                             topods_Vertex)
+from OCC.Core.TopLoc import TopLoc_Location
+from OCC.Core.TopTools import TopTools_ListOfShape
 from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
                                Quantity_NOC_GRAY, Quantity_NOC_BLACK,
                                Quantity_NOC_DARKGREEN)
-import myStepXcafReader
+from OCCUtils import Construct, Topology
 import OCC.Display.OCCViewer
 import OCC.Display.backend
 from OCC import VERSION
