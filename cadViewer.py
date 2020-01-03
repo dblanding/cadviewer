@@ -103,7 +103,6 @@ class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
         self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
 
@@ -164,7 +163,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.canva = qtDisplay.qtViewer3d(self)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.contextMenu)
         self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using PythonOCC-%s (PyQt5 backend)"%VERSION)
@@ -240,7 +238,6 @@ class MainWindow(QMainWindow):
         self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
         self.asyPrtTree = TreeList()   # Assy/Part structure (display)
         self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
-        #self.asyPrtTree.itemChanged.connect(self.asyPrtTreeItemChanged)
         self.treeDockWidget.setWidget(self.asyPrtTree)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
 
@@ -770,7 +767,7 @@ def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     elif (len(win.ptStack) == 3):
         wpBy3Pts()
 
-def wpOnFace(*args): # This doesn't work reliably. See Workplane class.
+def wpOnFace(*args):
     """ First face defines plane of wp. Second face defines uDir.
     """
     if not win.faceStack:
@@ -2132,4 +2129,3 @@ if __name__ == '__main__':
 
     win.raise_() # bring the app to the top
     app.exec_()
-
