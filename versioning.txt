@@ -1,0 +1,24 @@
+
+Thoughts on versioning:
+Assign a version number once the old code is working with the current
+version of PythonOCC. Use a three field version number like so:
+
+'0.74.1'
+
+First field is '0'
+
+When the app has enough functionality to be 'USEFUL' to somebody, then
+a case could be made for changing this to '1'. For example, if STEP read
+and write could support a Round Trip (loading a STEP file, modifying it,
+then writing it back out), that would be 'useful'.
+
+Second field is '74'
+
+This corresponds to the pyocc version with which it works. As witnessed
+by the recent problem caused by neglect of the code from 2016 until 2019,
+if it doesn't stay in sync with PythonOCC, it has little value.
+
+Third field is '1'
+
+Increment this number with significant imporvements to functionality.
+Reset to '1' if either of the first two fields are incremented.

@@ -28,12 +28,25 @@ pythonocc-0.16.3 is 4 years old, in the meantime code has changed because of :
 2. There is not Handle anymore. GetHandle and GetObject methods have disappeared. Just pass the object itself, the wrapper decides wether it has to pass the Handle or the Object to the C++ layer. You can check this commit (https://github.com/tpaviot/pythonocc-demos/commit/e59acdce5720d84ce76134789b48c268e36446d6#diff-68b70730ce65eb74e098809766ab3d0d), where we ported the old 'occ bottle example'.
 """
 
-Jan 2, 2020:  Progress has been better than I had hoped.
-The basic GUI is all there with all the widgets,
-STEP files can be loaded and they show up both in the display and with their correct assembly structure in the assembly/parts tree
-The RMB context menu works,
-Workplanes can be created using three different methods,
-The calculator works and seems to be communicating with the main window.
-Hopefully, I'll gst most of the toolbar buttons working in a couple more weeks...
-Once I get everything working again, I'll assign it a version number.
--Doug 
+Jan 4, 2020:  Progress has been better than I had hoped. 
+The basic GUI is all there with all the widgets, 
+STEP files can be loaded and they show up both in the display and with their correct assembly structure in the assembly/parts tree, 
+The RMB context menu works, 
+Workplanes can be created using three different methods, 
+The calculator works and seems to be communicating with the main window. 
+
+Here's my todo list, roughly in order of priority:
+
+	Get toolbar buttons working.
+
+	Modify Utility functions to output to a QtDialog rather than to console
+
+	Get 'Modify 3D' funcitons working
+
+	Clean up code with a linter.
+
+	Assign a version number.
+
+	Add abiltiy to write STEP file of assembly selected from tree.
+
+	Add ability to create, modify and move 3D parts & assemblies.
