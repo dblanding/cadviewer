@@ -1,17 +1,15 @@
 import math
-from OCC.Core.gp import *
-from OCC.Core.GC import *
-from OCC.Core.BRep import *
-from OCC.Core.BRepBuilderAPI import *
-from OCC.Core.GCE2d import *
-from OCC.Core.Geom import *
-from OCC.Core.Geom2d import *
-from OCC.Core.GeomAPI import *
-from OCC.Core.GeomLProp import *
-from OCC.Core.BRepTools import breptools_UVBounds
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
+                                     BRepBuilderAPI_MakeFace,
+                                     BRepBuilderAPI_MakeWire)
+from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
+from OCC.Core.GCE2d import GCE2d_MakeSegment
+from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve
+from OCC.Core.GeomAPI import geomapi_To3d
+from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt,
+                         gp_Pnt2d, gp_Pln, gp_Trsf)
+from OCC.Core.GProp import GProp_GProps
 from OCC.Core.TopAbs import TopAbs_REVERSED
-import OCC.Core.BRepGProp
-import OCC.Core.GProp
 from OCCUtils.Construct import face_normal
 
 #===========================================================================
@@ -361,8 +359,8 @@ class WorkPlane(object):
             self.plane = Geom_Plane(gpPlane)    # type: Geom_Plane
         elif face:  # create workplane on face, uDir defined by faceU
             wDir = face_normal(face)  # from OCCUtils.Construct module
-            props = OCC.Core.GProp.GProp_GProps()
-            OCC.Core.BRepGProp.brepgprop_SurfaceProperties(face, props)
+            props = GProp_GProps()
+            brepgprop_SurfaceProperties(face, props)
             origin = props.CentreOfMass()
             '''
             surface = BRep_Tool_Surface(face) # type: Handle_Geom_Surface
@@ -526,6 +524,6 @@ class WorkPlane(object):
         if constr:
             self.ccircList.append(geomCirc)
         else:
-            edge = BRepBuilderAPI_MakeEdge(Handle_Geom_Curve(geomCirc))
+            edge = BRepBuilderAPI_MakeEdge(Geom_Curve(geomCirc))
             self.wire = BRepBuilderAPI_MakeWire(edge.Edge()).Wire()
             self.wireList.append(self.wire)

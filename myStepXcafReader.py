@@ -27,26 +27,21 @@ import logging
 import os.path
 import treelib
 
-import OCC.Core.BRep
 from OCC.Core.IFSelect import IFSelect_RetDone
-import OCC.Core.Interface
-import OCC.Core.Quantity
-import OCC.Core.TopAbs
-import OCC.Core.TopoDS
+from OCC.Core.Quantity import Quantity_Color
 from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
-import OCC.Core.STEPControl
-from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
 from OCC.Core.TCollection import (TCollection_ExtendedString,
                                   TCollection_AsciiString)
-import OCC.Core.TColStd
+from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
+from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
 from OCC.Core.TDocStd import TDocStd_Document
+from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
 from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
-                              XCAFDoc_DocumentTool_MaterialTool)
-from OCC.Core.TDF import TDF_LabelSequence
-import OCC.Core.XSControl
+                              XCAFDoc_DocumentTool_MaterialTool,
+                              XCAFDoc_ColorSurf)
 
 from OCC.Extend.TopologyUtils import TopologyExplorer
 
@@ -86,9 +81,8 @@ class StepXcafImporter(object):
     def getColor(self, shape):
         # Get the part color
         #string_seq = self.layer_tool.GetObject().GetLayers(shape)
-        color = OCC.Core.Quantity.Quantity_Color()
-        self.color_tool.GetColor(shape,
-                                 OCC.Core.XCAFDoc.XCAFDoc_ColorSurf, color)
+        color = Quantity_Color()
+        self.color_tool.GetColor(shape, XCAFDoc_ColorSurf, color)
         logger.debug("color: {0}, {1}, {2}".format(color.Red(),
                                                    color.Green(),
                                                    color.Blue()))
@@ -109,7 +103,7 @@ class StepXcafImporter(object):
             logger.debug("Is Component? %s" % self.shape_tool.IsComponent(cLabel))
             logger.debug("Is Simple Shape? %s" % self.shape_tool.IsSimpleShape(cLabel))
             logger.debug("Is Reference? %s" % self.shape_tool.IsReference(cLabel))
-            refLabel = OCC.Core.TDF.TDF_Label()
+            refLabel = TDF_Label()
             isRef = self.shape_tool.GetReferredShape(cLabel, refLabel)
             if isRef:
                 refShape = self.shape_tool.GetShape(refLabel)
@@ -135,7 +129,7 @@ class StepXcafImporter(object):
                                           {'a': False, 'l': None, 'c': color, 's': cShape})
                 elif self.shape_tool.IsAssembly(refLabel):
                     name = self.getName(cLabel)  # Instance name
-                    aLoc = OCC.Core.TopLoc.TopLoc_Location()
+                    aLoc = TopLoc_Location()
                     aLoc = self.shape_tool.GetLocation(cLabel)
                     self.assyLocStack.append(aLoc)
                     newAssyUID = self.getNewUID()
@@ -144,7 +138,7 @@ class StepXcafImporter(object):
                                           self.assyUidStack[-1],
                                           {'a': True, 'l': aLoc, 'c': None, 's': None})
                     self.assyUidStack.append(newAssyUID)
-                    rComps = OCC.Core.TDF.TDF_LabelSequence() # Components of Assy
+                    rComps = TDF_LabelSequence() # Components of Assy
                     subchilds = False
                     isAssy = self.shape_tool.GetComponents(refLabel, rComps, subchilds)
                     logger.debug("Assy name: %s" % name)
@@ -207,7 +201,7 @@ class StepXcafImporter(object):
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
             # No need to examine other labels at root explicitly.
-            topLoc = OCC.Core.TopLoc.TopLoc_Location()
+            topLoc = TopLoc_Location()
             topLoc = shape_tool.GetLocation(label)
             self.assyLocStack.append(topLoc)
             entry = label.EntryDumpToString()
@@ -220,7 +214,7 @@ class StepXcafImporter(object):
                                   None,
                                   {'a': True, 'l': None, 'c': None, 's': None})
             self.assyUidStack.append(newAssyUID)
-            topComps = OCC.Core.TDF.TDF_LabelSequence() # Components of Top Assy
+            topComps = TDF_LabelSequence() # Components of Top Assy
             subchilds = False
             isAssy = shape_tool.GetComponents(label, topComps, subchilds)
             logger.debug("Is Assembly? %s" % isAssy)
