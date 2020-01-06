@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         status.addPermanentWidget(self.endOpButton)
         status.addPermanentWidget(self.unitsLabel)
         status.showMessage("Ready", 5000)
-        self.activeAsy = None # tree node object maybe?
+        self.activeAsy = None # tree node object
         self.activeAsyUID = 0
         self.activePart = None # OCCpartObject
         self.activePartUID = 0
@@ -350,6 +350,7 @@ class MainWindow(QMainWindow):
                 self.redraw()
             else:
                 self.activeAsyUID = uid
+                self.activeAsy = item
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
             self.asyPrtTree.clearSelection()
             self.itemClicked = None
@@ -417,6 +418,9 @@ class MainWindow(QMainWindow):
 
     def printActiveAsyUID(self):
         print(self.activeAsyUID)
+
+    def printActiveAsyName(self):
+        print(self.activeAsy.text(0)) # See function 'setActive()'
 
     def printActiveWpUID(self):
         print(self.activeWpUID)
@@ -2101,6 +2105,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
     win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
     win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
+    win.add_function_to_menu('Utility', "print(Active AsyName)", win.printActiveAsyName)
     win.add_function_to_menu('Utility', "print(Active Prt UID)", win.printActivePartUID)
     win.add_function_to_menu('Utility', "print(Active PartName)", win.printActivePartName)
     win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
