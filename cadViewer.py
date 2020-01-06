@@ -32,8 +32,8 @@ import logging
 import math
 import os, os.path
 import sys
-import myStepXcafReader
 import rpnCalculator
+import stepXD
 import treelib
 import workplane
 from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
@@ -646,7 +646,7 @@ class MainWindow(QMainWindow):
             return
         name = os.path.basename(fname).split('.')[0]
         nextUID = self._currentUID
-        stepImporter = myStepXcafReader.StepXcafImporter(fname, nextUID)
+        stepImporter = stepXD.StepImporter(fname, nextUID)
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
         for uid in tree.expand_tree(mode=self.tree.DEPTH):

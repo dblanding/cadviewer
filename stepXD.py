@@ -2,10 +2,11 @@
 #
 # This file is part of cadViewer.
 #
-# The goal of this module is to be able to read (and write) step files
-# with complete Assembly / Part structure, including the names of parts
-# and assemblies, colors of parts, and with all components shown in their
-# correct positions.
+# This module provides classes to read and write eXtended Data to and
+# from step files, enabling the saving and loading (in STEP format)
+# of a top assembly with its heirarchical structure (including all its
+# component parts and subassemblies) with their names & colors.
+#
 # The latest  version of this file can be found at:
 # //https://github.com/dblanding/cadviewer
 #
@@ -51,7 +52,7 @@ from OCC.Extend.TopologyUtils import TopologyExplorer
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO) # set to DEBUG | INFO | ERROR
 
-class StepXcafImporter(object):
+class StepImporter():
     """
     Read a step file with the goal of collecting a complete and accurate
     Assembly/Part structure, including the names of parts and assemblies,
