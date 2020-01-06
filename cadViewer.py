@@ -204,6 +204,8 @@ class MainWindow(QMainWindow):
         status.addPermanentWidget(self.endOpButton)
         status.addPermanentWidget(self.unitsLabel)
         status.showMessage("Ready", 5000)
+        self.activeAsy = None # tree node object maybe?
+        self.activeAsyUID = 0
         self.activePart = None # OCCpartObject
         self.activePartUID = 0
         self.activeWp = None # WorkPlane object
@@ -347,7 +349,8 @@ class MainWindow(QMainWindow):
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
                 self.redraw()
             else:
-                sbText = "This is an assembly. Click on a part."
+                self.activeAsyUID = uid
+                sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
             self.asyPrtTree.clearSelection()
             self.itemClicked = None
             self.statusBar().showMessage(sbText, 5000)
@@ -411,6 +414,18 @@ class MainWindow(QMainWindow):
     
     def printCurrUID(self):
         print(self._currentUID)
+
+    def printActiveAsyUID(self):
+        print(self.activeAsyUID)
+
+    def printActiveWpUID(self):
+        print(self.activeWpUID)
+
+    def printActivePartUID(self):
+        print(self.activePartUID)
+
+    def printActivePartName(self):
+        print(self._nameDict[self.activePartUID])
 
     def getNewPartUID(self, objct, name="", ancestor=0,
                       typ='p', color=None):
@@ -715,7 +730,18 @@ class MainWindow(QMainWindow):
         step_writer.Transfer(self.activePart, STEPControl_AsIs)
         status = step_writer.Write(fname)
         assert(status == IFSelect_RetDone)
-        
+
+    def saveStep(self):
+        prompt = 'Choose filename for step file.'
+        fnametuple = QFileDialog.getSaveFileName(None, prompt, './',
+                                                 "STEP files (*.stp *.STP *.step)")
+        fname, _ = fnametuple
+        if not fname:
+            print("Save step cancelled.")
+            return
+        else:
+            print(fname)
+
 #############################################
 #
 # Workplane creation functions...
@@ -2048,6 +2074,7 @@ if __name__ == '__main__':
     win = MainWindow()
     win.add_menu('File')
     win.add_function_to_menu('File', "Load STEP", win.loadStep)
+    win.add_function_to_menu('File', "Save STEP", win.saveStep)
     win.add_function_to_menu('File', "Save STEP (Act Prt)", win.saveStepActPrt)
     win.add_menu('Workplane')
     win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
@@ -2070,12 +2097,16 @@ if __name__ == '__main__':
     win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
     win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
     win.add_menu('Utility')
-    win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)    
-    win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)    
-    win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)    
-    win.add_function_to_menu('Utility', "Calculator", win.launchCalc) 
-    win.add_function_to_menu('Utility', "set Units ->in", setUnits_in) 
-    win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm) 
+    win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
+    win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
+    win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
+    win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
+    win.add_function_to_menu('Utility', "print(Active Prt UID)", win.printActivePartUID)
+    win.add_function_to_menu('Utility', "print(Active PartName)", win.printActivePartName)
+    win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
+    win.add_function_to_menu('Utility', "Calculator", win.launchCalc)
+    win.add_function_to_menu('Utility', "set Units ->in", setUnits_in)
+    win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm)
 
     drawSubMenu = QMenu('Draw')
     win.popMenu.addMenu(drawSubMenu)    

@@ -67,7 +67,6 @@ class StepImporter():
         self._currentUID = nextUID
         self.assyUidStack = [0]
         self.assyLocStack = []
-
         self.read_file()
 
     def getNewUID(self):
@@ -183,7 +182,8 @@ class StepImporter():
             logger.info("Transfer doc to STEPCAFControl_Reader")
             step_reader.Transfer(doc)
 
-        # Test round trip by writing doc back to another file.
+        """
+        # Test round trip by writing doc back to another file (this works)
         logger.info("Doing a 'short-circuit' Round Trip test")
         doctype = type(doc)  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
         logger.info(f"Writing {doctype} back to another STEP file")
@@ -193,6 +193,7 @@ class StepImporter():
         logger.debug("Saving doc to file")
         savefilename = TCollection_ExtendedString('../doc.txt')
         app.SaveAs(doc, savefilename)
+        """
 
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
@@ -297,3 +298,18 @@ class StepImporter():
         status = step_writer.Write(fname)
         assert(status == IFSelect_RetDone)
 
+class StepExporter():
+    """
+    Export an assembly to a step file, collecting a complete and accurate
+    Assembly/Part structure, including the names of parts and assemblies,
+    part color, and with all components shown in their correct positions.
+    """
+
+    def __init__(self, filename):
+
+        self.filename = filename
+        print(filename)
+        self.tree = treelib.tree.Tree()  # to hold assembly structure
+
+    def write_file(treenode):
+        print(treenode)
