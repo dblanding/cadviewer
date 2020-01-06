@@ -1,19 +1,22 @@
+# Copyright 2020 Doug Blanding (dblanding@gmail.com)
 #
-# myStepXcafReader.py
-# The goal of this module is to be able to read (and write) step files with complete
-# Assembly / Part structure, including the names of parts and assemblies, colors
-# of parts, and with all components shown in their correct positions.
+# This file is part of cadViewer.
+#
+# The goal of this module is to be able to read (and write) step files
+# with complete Assembly / Part structure, including the names of parts
+# and assemblies, colors of parts, and with all components shown in their
+# correct positions.
 # The latest  version of this file can be found at:
 # //https://github.com/dblanding/cadviewer
 #
 # Author: Doug Blanding   <dblanding at gmail dot com>
 #
-# myStepXcafReader is free software; you can redistribute it and/or modify
+# cadViewer is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# myStepXcafReader is distributed in the hope that it will be useful,
+# cadViewer is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -72,11 +75,8 @@ class StepXcafImporter(object):
         return uid
 
     def getName(self, label):
-        '''Get the part name from its label.'''
-        try:
-            return label.GetLabelName()
-        except AttributeError:
-            return "No_name"
+        '''Get part name from label.'''
+        return label.GetLabelName()
 
     def getColor(self, shape):
         # Get the part color
@@ -151,8 +151,8 @@ class StepXcafImporter(object):
         return
 
     def read_file(self):
-        """
-        Build self.tree (treelib.Tree()) containing the CAD data read from a step file.
+        """Build self.tree (treelib.Tree()) containing CAD data read from a step file.
+
         Each node of self.tree contains the following:
         (Name, UID, ParentUID, {Data}) where the Data keys are:
         'a' (isAssy?), 'l' (TopLoc_Location), 'c' (Quantity_Color), 's' (TopoDS_Shape)
@@ -187,6 +187,11 @@ class StepXcafImporter(object):
         doctype = type(doc)  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
         logger.info(f"Writing {doctype} back to another STEP file")
         self.testRTStep(doc)
+
+        # Save doc to file (for educational purposes) (not working yet)
+        logger.debug("Saving doc to file")
+        savefilename = TCollection_ExtendedString('../doc.txt')
+        app.SaveAs(doc, savefilename)
 
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
@@ -260,25 +265,28 @@ class StepXcafImporter(object):
                         self.tree.create_node(name,
                                               self.getNewUID(),
                                               self.assyUidStack[-1],
-                                              {'a': False, 'l': None, 'c': color, 's': solid})
+                                              {'a': False, 'l': None,
+                                               'c': color, 's': solid})
                 elif shapeType == 2:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SOLID")
                     self.tree.create_node(name,
                                           self.getNewUID(),
                                           self.assyUidStack[-1],
-                                          {'a': False, 'l': None, 'c': color, 's': shape})
+                                          {'a': False, 'l': None,
+                                           'c': color, 's': shape})
                 elif shapeType == 3:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SHELL")
                     self.tree.create_node(name,
                                           self.getNewUID(),
                                           self.assyUidStack[-1],
-                                          {'a': False, 'l': None, 'c': color, 's': shape})
+                                          {'a': False, 'l': None,
+                                           'c': color, 's': shape})
         return True
 
     def testRTStep(self, doc):
         """A 'short-circuit' Round Trip test. Write doc back to step file."""
 
-        fname = "step/testRoundTrip.stp"
+        fname = "../testRoundTrip.stp"
 
         # initialize the STEP exporter
         step_writer = STEPCAFControl_Writer()

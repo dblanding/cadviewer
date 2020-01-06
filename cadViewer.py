@@ -637,7 +637,8 @@ class MainWindow(QMainWindow):
         3. Paste the loaded tree onto win.tree (treeModel)
         """
         prompt = 'Select STEP file to import'
-        fnametuple = QFileDialog.getOpenFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fnametuple = QFileDialog.getOpenFileName(None, prompt, './',
+                                                 "STEP files (*.stp *.STP *.step)")
         fname, _ = fnametuple
         logger.debug("Load file name: %s" % fname)
         if not fname:
@@ -699,11 +700,12 @@ class MainWindow(QMainWindow):
 
     def saveStepActPrt(self):
         prompt = 'Choose filename for step file.'
-        fname = QFileDialog.getSaveFileName(None, prompt, './', "STEP files (*.stp *.STP *.step)")
+        fnametuple = QFileDialog.getSaveFileName(None, prompt, './',
+                                                 "STEP files (*.stp *.STP *.step)")
+        fname, _ = fnametuple
         if not fname:
             print("Save step cancelled.")
             return
-        fname = str(fname)
         
         # initialize the STEP exporter
         step_writer = STEPControl_Writer()
