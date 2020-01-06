@@ -29,7 +29,8 @@ import treelib
 
 from OCC.Core.IFSelect import IFSelect_RetDone
 from OCC.Core.Quantity import Quantity_Color
-from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
+from OCC.Core.STEPCAFControl import (STEPCAFControl_Reader,
+                                     STEPCAFControl_Writer)
 from OCC.Core.TCollection import (TCollection_ExtendedString,
                                   TCollection_AsciiString)
 from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
@@ -42,7 +43,6 @@ from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_LayerTool,
                               XCAFDoc_DocumentTool_MaterialTool,
                               XCAFDoc_ColorSurf)
-
 from OCC.Extend.TopologyUtils import TopologyExplorer
 
 logger = logging.getLogger(__name__)
@@ -182,12 +182,17 @@ class StepXcafImporter(object):
             logger.info("Transfer doc to STEPCAFControl_Reader")
             step_reader.Transfer(doc)
 
+        # Test round trip by writing doc back to another file.
+        logger.info("Doing a 'short-circuit' Round Trip test")
+        doctype = type(doc)  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
+        logger.info(f"Writing {doctype} back to another STEP file")
+        self.testRTStep(doc)
+
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
 
         shape_tool.GetShapes(labels)
         self.shape_tool = shape_tool
-        #self.shape_tool = shape_tool
         logger.info('Number of labels at root : %i' % labels.Length())
         try:
             label = labels.Value(1) # First label at root
@@ -269,3 +274,17 @@ class StepXcafImporter(object):
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None, 'c': color, 's': shape})
         return True
+
+    def testRTStep(self, doc):
+        """A 'short-circuit' Round Trip test. Write doc back to step file."""
+
+        fname = "step/testRoundTrip.stp"
+
+        # initialize the STEP exporter
+        step_writer = STEPCAFControl_Writer()
+
+        # transfer shapes and write file
+        step_writer.Transfer(doc)
+        status = step_writer.Write(fname)
+        assert(status == IFSelect_RetDone)
+
