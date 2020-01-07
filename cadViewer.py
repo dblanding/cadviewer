@@ -489,17 +489,16 @@ class MainWindow(QMainWindow):
         print(self.activeAsyUID)
 
     def printActiveAsyInfo(self):
-        print(f"Name: {self.activeAsy.text(0)}")
-        print(f"UID: {self.activeAsy.text(1)}")
+        print(f"Name: {self.activeAsy}")
+        print(f"UID: {self.activeAsyUID}")
 
-    def printActiveWpUID(self):
-        print(self.activeWpUID)
+    def printActiveWpInfo(self):
+        print(f"Name: {self.activeWp}")
+        print(f"UID: {self.activeWpUID}")
 
-    def printActivePartUID(self):
-        print(self.activePartUID)
-
-    def printActivePartName(self):
-        print(self._nameDict[self.activePartUID])
+    def printActivePartInfo(self):
+        print(f"Name: {self.activePart}")
+        print(f"UID: {self.activePartUID}")
 
     def getNewPartUID(self, objct, name="", ancestor=0,
                       typ='p', color=None):
@@ -2177,12 +2176,9 @@ if __name__ == '__main__':
     win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
     win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
     win.add_function_to_menu('Utility', "print(TreeViewData)", win.printTreeView)
-    win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
-    win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
+    win.add_function_to_menu('Utility', "print(Active Wp Info)", win.printActiveWpInfo)
     win.add_function_to_menu('Utility', "print(Active Asy Info)", win.printActiveAsyInfo)
-    win.add_function_to_menu('Utility', "print(parts in Active Asy)", win.printPartsInActiveAssy)
-    win.add_function_to_menu('Utility', "print(Active Prt UID)", win.printActivePartUID)
-    win.add_function_to_menu('Utility', "print(Active PartName)", win.printActivePartName)
+    win.add_function_to_menu('Utility', "print(Active Prt Info)", win.printActivePartInfo)
     win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
     win.add_function_to_menu('Utility', "Calculator", win.launchCalc)
     win.add_function_to_menu('Utility', "set Units ->in", setUnits_in)
