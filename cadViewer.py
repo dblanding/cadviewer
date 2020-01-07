@@ -294,6 +294,15 @@ class MainWindow(QMainWindow):
                     asyPrtTree.append(pid)
             return asyPrtTree
 
+    def printPartsInActiveAssy(self):
+        asyPrtTree = []
+        leafNodes = self.tree.leaves(self.activeAsyUID)
+        for node in leafNodes:
+            pid = node.identifier
+            if pid in self._partDict.keys():
+                asyPrtTree.append(pid)
+        print(asyPrtTree)
+
     def asyPrtTreeItemClicked(self, item):  # called whenever treeView item is clicked
         self.itemClicked = item # store item
         if not self.inSync():   # click may have been on checkmark. Update drawList (if needed)
@@ -419,8 +428,9 @@ class MainWindow(QMainWindow):
     def printActiveAsyUID(self):
         print(self.activeAsyUID)
 
-    def printActiveAsyName(self):
-        print(self.activeAsy.text(0)) # See function 'setActive()'
+    def printActiveAsyInfo(self):
+        print(f"Name: {self.activeAsy.text(0)}")
+        print(f"UID: {self.activeAsy.text(1)}")
 
     def printActiveWpUID(self):
         print(self.activeWpUID)
@@ -2105,7 +2115,8 @@ if __name__ == '__main__':
     win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
     win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
     win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
-    win.add_function_to_menu('Utility', "print(Active AsyName)", win.printActiveAsyName)
+    win.add_function_to_menu('Utility', "print(Active Asy Info)", win.printActiveAsyInfo)
+    win.add_function_to_menu('Utility', "print(parts in Active Asy)", win.printPartsInActiveAssy)
     win.add_function_to_menu('Utility', "print(Active Prt UID)", win.printActivePartUID)
     win.add_function_to_menu('Utility', "print(Active PartName)", win.printActivePartName)
     win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
