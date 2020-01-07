@@ -42,7 +42,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QMenu, QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
-                             QInputDialog)
+                             QInputDialog, QtWidgetItemIterator)
 from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
@@ -92,7 +92,7 @@ TOL = 1e-7 # Linear Tolerance
 ATOL = TOL # Angular Tolerance
 print('TOLERANCE = ', TOL)
 
-class TreeList(QTreeWidget): # With 'drag & drop' ; context menu
+class TreeView(QTreeWidget): # With 'drag & drop' ; context menu
     """ Display assembly structure. """
 
     def __init__(self, parent=None):
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
         self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
         self.treeDockWidget.setObjectName("treeDockWidget")
         self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
-        self.asyPrtTree = TreeList()   # Assy/Part structure (display)
+        self.asyPrtTree = TreeView()   # Assy/Part structure (display)
         self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
         self.treeDockWidget.setWidget(self.asyPrtTree)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
@@ -410,6 +410,17 @@ class MainWindow(QMainWindow):
         edgeLen()
 
     ####  Administrative and data management methods:
+
+    def traverseTreeView(self):
+        root = self.asyPrtTreeRoot
+        child_count = root.childCount()
+        for i in range(child_count):
+            item = root.child(i)
+            print(f"UID: {item.text(1)}; Name: {item.text(0)}")
+
+    def syncModelToView(self):
+        """ """
+        iterator = QTreeWidgetItemIterator(self.treeWidget)
 
     def launchCalc(self):
         if not self.calculator:
@@ -678,7 +689,8 @@ class MainWindow(QMainWindow):
         stepImporter = stepXD.StepImporter(fname, nextUID)
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
-        for uid in tree.expand_tree(mode=self.tree.DEPTH):
+        treeguts = tree.expand_tree(mode=self.tree.DEPTH)
+        for uid in treeguts:  # type(uid) == int
             node = tree.get_node(uid)
             name = node.tag
             itemName = [name, str(uid)]
@@ -2113,6 +2125,7 @@ if __name__ == '__main__':
     win.add_menu('Utility')
     win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
     win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
+    win.add_function_to_menu('Utility', "print(Children of Root)", win.traverseTreeView)
     win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
     win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
     win.add_function_to_menu('Utility', "print(Active Asy Info)", win.printActiveAsyInfo)
