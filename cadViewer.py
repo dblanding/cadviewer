@@ -42,7 +42,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QMenu, QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
-                             QInputDialog, QtWidgetItemIterator)
+                             QInputDialog, QTreeWidgetItemIterator)
 from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
@@ -420,7 +420,7 @@ class MainWindow(QMainWindow):
 
     def syncModelToView(self):
         """ """
-        iterator = QTreeWidgetItemIterator(self.treeWidget)
+        iterator = QTreeWidgetItemIterator(self.asyPrtTree)
 
     def launchCalc(self):
         if not self.calculator:
