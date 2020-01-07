@@ -220,11 +220,11 @@ class MainWindow(QMainWindow):
         self._currentUID = 0
         self._wpNmbr = 1
         self.drawList = [] # list of part uid's to be displayed
-        self.tree = treelib.Tree()  # Assy/Part Structure (model)
-        self.tree.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
+        self.treeModel = treelib.Tree()  # Assy/Part Structure (model)
+        self.treeModel.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
         itemName = ['/', str(0)]
-        self.asyPrtTreeRoot = QTreeWidgetItem(self.asyPrtTree, itemName)    # Root Item in TreeView
-        self.asyPrtTree.expandItem(self.asyPrtTreeRoot)
+        self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
+        self.treeView.expandItem(self.treeViewRoot)
         self.itemClicked = None   # TreeView item that has been mouse clicked
         self.floatStack = []  # storage stack for floating point values
         self.ptStack = []  # storage stack for point picks
@@ -238,9 +238,9 @@ class MainWindow(QMainWindow):
         self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
         self.treeDockWidget.setObjectName("treeDockWidget")
         self.treeDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea| Qt.RightDockWidgetArea)
-        self.asyPrtTree = TreeView()   # Assy/Part structure (display)
-        self.asyPrtTree.itemClicked.connect(self.asyPrtTreeItemClicked)
-        self.treeDockWidget.setWidget(self.asyPrtTree)
+        self.treeView = TreeView()   # Assy/Part structure (display)
+        self.treeView.itemClicked.connect(self.treeViewItemClicked)
+        self.treeDockWidget.setWidget(self.treeView)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDockWidget)
 
     ####  PyQt menuBar & general methods:
@@ -287,7 +287,7 @@ class MainWindow(QMainWindow):
             print("This node is not an assembly")
         else:
             asyPrtTree = []
-            leafNodes = self.tree.leaves(uid)
+            leafNodes = self.treeModel.leaves(uid)
             for node in leafNodes:
                 pid = node.identifier
                 if pid in self._partDict.keys():
@@ -296,14 +296,14 @@ class MainWindow(QMainWindow):
 
     def printPartsInActiveAssy(self):
         asyPrtTree = []
-        leafNodes = self.tree.leaves(self.activeAsyUID)
+        leafNodes = self.treeModel.leaves(self.activeAsyUID)
         for node in leafNodes:
             pid = node.identifier
             if pid in self._partDict.keys():
                 asyPrtTree.append(pid)
         print(asyPrtTree)
 
-    def asyPrtTreeItemClicked(self, item):  # called whenever treeView item is clicked
+    def treeViewItemClicked(self, item):  # called whenever treeView item is clicked
         self.itemClicked = item # store item
         if not self.inSync():   # click may have been on checkmark. Update drawList (if needed)
             self.syncDrawListToChecked()
@@ -314,7 +314,7 @@ class MainWindow(QMainWindow):
         Returns list of checked (part) items in treeView
         """
         dl = []
-        for item in self.asyPrtTree.findItems("", Qt.MatchContains | Qt.MatchRecursive):
+        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
             if item.checkState(0) == 2:
                 uid = int(item.text(1))
                 if (uid in self._partDict.keys()) or (uid in self._wpDict.keys()):
@@ -334,7 +334,7 @@ class MainWindow(QMainWindow):
         self.drawList = self.checkedToList()
 
     def syncCheckedToDrawList(self):
-        for item in self.asyPrtTree.findItems("", Qt.MatchContains | Qt.MatchRecursive):
+        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
             itemUid = int(item.text(1))
             if (itemUid in self._partDict) or (itemUid in self._wpDict):
                 if itemUid in self.drawList:
@@ -361,7 +361,7 @@ class MainWindow(QMainWindow):
                 self.activeAsyUID = uid
                 self.activeAsy = item
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
-            self.asyPrtTree.clearSelection()
+            self.treeView.clearSelection()
             self.itemClicked = None
             self.statusBar().showMessage(sbText, 5000)
 
@@ -396,7 +396,7 @@ class MainWindow(QMainWindow):
                 item.setText(0, newName)
                 sbText = "Part name changed to %s" % newName
                 self._nameDict[uid] = newName
-        self.asyPrtTree.clearSelection()
+        self.treeView.clearSelection()
         self.itemClicked = None
         # Todo: update name in treeModel
         self.statusBar().showMessage(sbText, 5000)
@@ -412,7 +412,7 @@ class MainWindow(QMainWindow):
     ####  Administrative and data management methods:
 
     def traverseTreeView(self):
-        root = self.asyPrtTreeRoot
+        root = self.treeViewRoot
         child_count = root.childCount()
         for i in range(child_count):
             item = root.child(i)
@@ -420,7 +420,7 @@ class MainWindow(QMainWindow):
 
     def syncModelToView(self):
         """ """
-        iterator = QTreeWidgetItemIterator(self.asyPrtTree)
+        iterator = QTreeWidgetItemIterator(self.treeView)
 
     def launchCalc(self):
         if not self.calculator:
@@ -487,7 +487,7 @@ class MainWindow(QMainWindow):
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
-            self.tree.create_node(name,
+            self.treeModel.create_node(name,
                                   uid,
                                   0,
                                   {'a': False, 'l': None, 'c': c, 's': objct})
@@ -496,7 +496,7 @@ class MainWindow(QMainWindow):
             self.activePart = objct
         elif typ == 'a':
             self._assyDict[uid] = objct  # TopLoc_Location
-            self.tree.create_node(name,
+            self.treeModel.create_node(name,
                                   uid,
                                   0,
                                   {'a': True, 'l': None, 'c': None, 's': None})
@@ -504,7 +504,7 @@ class MainWindow(QMainWindow):
             name = "wp%i" % self._wpNmbr
             self._wpNmbr += 1
             self._wpDict[uid] = objct # wpObject
-            self.tree.create_node(name,
+            self.treeModel.create_node(name,
                                   uid,
                                   0,
                                   {'a': False, 'l': None, 'c': None, 's': None})
@@ -513,7 +513,7 @@ class MainWindow(QMainWindow):
         self._nameDict[uid] = name
         # add item to treeView
         itemName = [name, str(uid)]
-        item = QTreeWidgetItem(self.asyPrtTreeRoot, itemName)
+        item = QTreeWidgetItem(self.treeViewRoot, itemName)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
         # Add new uid to draw list and sync w/ treeView
@@ -689,7 +689,7 @@ class MainWindow(QMainWindow):
         stepImporter = stepXD.StepImporter(fname, nextUID)
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
-        treeguts = tree.expand_tree(mode=self.tree.DEPTH)
+        treeguts = tree.expand_tree(mode=self.treeModel.DEPTH)
         for uid in treeguts:  # type(uid) == int
             node = tree.get_node(uid)
             name = node.tag
@@ -697,19 +697,19 @@ class MainWindow(QMainWindow):
             parentUid = node.bpointer
             if node.data['a']:  # Assembly
                 if not parentUid: # This is the top level item
-                    parentItem = self.asyPrtTreeRoot
+                    parentItem = self.treeViewRoot
                 else:
                     parentItem = tempTreeDict[parentUid]
                 item = QTreeWidgetItem(parentItem, itemName)
                 item.setFlags(item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
-                self.asyPrtTree.expandItem(item)
+                self.treeView.expandItem(item)
                 tempTreeDict[uid] = item
                 Loc = node.data['l'] # Location object
                 self._assyDict[uid] = Loc
             else:   # Part
                 # add item to asyPrtTree treeView
                 if not parentUid: # This is the top level item
-                    parentItem = self.asyPrtTreeRoot
+                    parentItem = self.treeViewRoot
                 else:
                     parentItem = tempTreeDict[parentUid]
                 item = QTreeWidgetItem(parentItem, itemName)
@@ -729,7 +729,7 @@ class MainWindow(QMainWindow):
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
                 self.drawList.append(uid)   # Add to draw list
-        self.tree.paste(0, tree) # Paste tree onto win.tree root
+        self.treeModel.paste(0, tree) # Paste tree onto win.tree root
         
         keyList = tempTreeDict.keys()
         keyList = list(keyList)
@@ -2145,10 +2145,10 @@ if __name__ == '__main__':
     drawSubMenu.addAction('Draw All', win.drawAll)    
     drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
 
-    win.asyPrtTree.popMenu.addAction('Set Active', win.setActive)
-    win.asyPrtTree.popMenu.addAction('Make Transparent', win.setTransparent)
-    win.asyPrtTree.popMenu.addAction('Make Opaque', win.setOpaque)
-    win.asyPrtTree.popMenu.addAction('Edit Name', win.editName)
+    win.treeView.popMenu.addAction('Set Active', win.setActive)
+    win.treeView.popMenu.addAction('Make Transparent', win.setTransparent)
+    win.treeView.popMenu.addAction('Make Opaque', win.setOpaque)
+    win.treeView.popMenu.addAction('Edit Name', win.editName)
 
     win.show()
     win.canva.InitDriver()
