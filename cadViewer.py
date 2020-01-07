@@ -37,7 +37,7 @@ import stepXD
 import treelib
 import workplane
 from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QMenu, QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
@@ -276,11 +276,169 @@ class MainWindow(QMainWindow):
             pass
         event.accept()
 
-    #### 'treeView' related methods:
+    #### 'treeView' (QTreeWidget) related methods:
 
     def contextMenu(self, point):
         self.menu = QMenu()
         action = self.popMenu.exec_(self.mapToGlobal(point))
+
+    def treeViewItemClicked(self, item):  # called whenever treeView item is clicked
+        self.itemClicked = item # store item
+        if not self.inSync():   # click may have been on checkmark. Update drawList (if needed)
+            self.syncDrawListToChecked()
+            self.redraw()
+
+    def checkedToList(self):
+        """
+        Returns list of uid's of checked (part) items in treeView
+        """
+        dl = []
+        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
+            if item.checkState(0) == 2:
+                strUID = item.text(1)
+                uid = int(strUID)
+                if (uid in self._partDict.keys()) or (uid in self._wpDict.keys()):
+                    dl.append(uid)
+        return dl
+        
+    def inSync(self):
+        """Return True if checked items are in sync with drawList."""
+        return self.checkedToList() == self.drawList
+        
+    def syncDrawListToChecked(self):
+        self.drawList = self.checkedToList()
+
+    def syncCheckedToDrawList(self):
+        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
+            strUID = item.text(1)
+            uid = int(strUID)
+            if (uid in self._partDict) or (uid in self._wpDict):
+                if uid in self.drawList:
+                    item.setCheckState(0, Qt.Checked)
+                else:
+                    item.setCheckState(0, Qt.Unchecked)
+
+    def sortViewItems(self):
+        """Return dicts of view items sorted by type: (prt, ay, wp)"""
+        # Traverse all treeView items
+        iterator = QTreeWidgetItemIterator(self.treeView)
+        pdict = {}  # part-types    {uid: item}
+        adict = {}  # asy-types     {uid: item}
+        wdict = {}  # wp-types      {uid: item}
+        while iterator.value():
+            item = iterator.value()
+            name = item.text(0)
+            strUID = item.text(1)
+            uid = int(strUID)
+            if uid in self._partDict:
+                pdict[uid] = item
+            elif uid in self._assyDict:
+                adict[uid] = item
+            elif uid in self._wpDict:
+                wdict[uid] = item
+            iterator += 1
+        return (pdict, adict, wdict)
+
+    def setClickedActive(self):
+        """Set item clicked in treeView Active."""
+        item = self.itemClicked
+        if item:
+            self.setItemActive(item)
+            self.treeView.clearSelection()
+            self.itemClicked = None
+
+    def setItemActive(self, item):
+        if item:
+            name = item.text(0)
+            strUID = item.text(1)
+            uid = int(strUID)
+            print(f"Part selected: {name}, UID: {uid}")
+            pd, ad, wd = self.sortViewItems()
+            if uid in pd:
+                # Clear BG color of all part items
+                for itm in pd.values():
+                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+                # Set BG color of new active part
+                item.setBackground(0, QBrush(QColor('pink')))
+                self.activePart = self._partDict[uid]
+                self.activePartUID = uid
+                sbText = "%s [uid=%i] is now the active part" % (name, uid)
+                self.redraw()
+            elif uid in wd:
+                # Clear BG color of all wp items
+                for itm in wd.values():
+                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+                # Set BG color of new active wp
+                item.setBackground(0, QBrush(QColor('lightgreen')))
+                self.activeWp = self._wpDict[uid]
+                self.activeWpUID = uid
+                sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
+                self.redraw()
+            elif uid in ad:
+                # Clear BG color of all asy items
+                for itm in ad.values():
+                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+                # Set BG color of new active asy
+                item.setBackground(0, QBrush(QColor('lightblue')))
+                self.activeAsyUID = uid
+                self.activeAsy = item
+                sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
+            self.statusBar().showMessage(sbText, 5000)
+
+    def setTransparent(self):
+        item = self.itemClicked
+        if item:
+            strUID = item.text(1)
+            uid = int(strUID)
+            if uid in self._partDict:
+                self._transparencyDict[uid] = 0.6
+                self.redraw()
+            self.itemClicked = None
+
+    def setOpaque(self):
+        item = self.itemClicked
+        if item:
+            strUID = item.text(1)
+            uid = int(strUID)
+            if uid in self._partDict:
+                self._transparencyDict.pop(uid)
+                self.redraw()
+            self.itemClicked = None
+               
+    def editName(self): # Edit name of item clicked in treeView
+        item = self.itemClicked
+        sbText = '' # status bar text
+        if item:
+            name = item.text(0)
+            strUID = item.text(1)
+            uid = int(strUID)
+            prompt = 'Enter new name for part %s' % name
+            newName, OK = QInputDialog.getText(self, 'Input Dialog',
+                                               prompt, text=name)
+            if OK:
+                item.setText(0, newName)
+                sbText = "Part name changed to %s" % newName
+                self._nameDict[uid] = newName
+        self.treeView.clearSelection()
+        self.itemClicked = None
+        # Todo: update name in treeModel
+        self.statusBar().showMessage(sbText, 5000)
+
+    def printTreeView(self):
+        """Print 'uid'; 'name'; 'parent' for all items in treeView."""
+        iterator = QTreeWidgetItemIterator(self.treeView)
+        while iterator.value():
+            item = iterator.value()
+            name = item.text(0)
+            strUID = item.text(1)
+            uid = int(strUID)
+            pname = None
+            parent = item.parent()
+            if parent:
+                puid = parent.text(1)
+                pname = parent.text(0)
+            print(f"UID: {uid}; Name: {name}; Parent: {pname}")
+            iterator += 1
 
     def getPartsInAssy(self, uid):
         if uid not in self._assyDict.keys():
@@ -303,104 +461,6 @@ class MainWindow(QMainWindow):
                 asyPrtTree.append(pid)
         print(asyPrtTree)
 
-    def treeViewItemClicked(self, item):  # called whenever treeView item is clicked
-        self.itemClicked = item # store item
-        if not self.inSync():   # click may have been on checkmark. Update drawList (if needed)
-            self.syncDrawListToChecked()
-            self.redraw()
-
-    def checkedToList(self):
-        """
-        Returns list of checked (part) items in treeView
-        """
-        dl = []
-        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
-            if item.checkState(0) == 2:
-                uid = int(item.text(1))
-                if (uid in self._partDict.keys()) or (uid in self._wpDict.keys()):
-                    dl.append(uid)
-        return dl
-        
-    def inSync(self):
-        """
-        Returns True if checked items are in sync with drawList
-        """
-        if self.checkedToList() == self.drawList:
-            return True
-        else:
-            return False
-        
-    def syncDrawListToChecked(self):
-        self.drawList = self.checkedToList()
-
-    def syncCheckedToDrawList(self):
-        for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
-            itemUid = int(item.text(1))
-            if (itemUid in self._partDict) or (itemUid in self._wpDict):
-                if itemUid in self.drawList:
-                    item.setCheckState(0, Qt.Checked)
-                else:
-                    item.setCheckState(0, Qt.Unchecked)
-
-    def setActive(self):    # Set item clicked in treeView Active
-        item = self.itemClicked
-        if item:
-            name = item.text(0)
-            uid = int(item.text(1))
-            if uid in self._partDict:
-                self.activePart = self._partDict[uid]
-                self.activePartUID = uid
-                sbText = "%s [uid=%i] is now the active part" % (name, uid)
-                self.redraw()
-            elif uid in self._wpDict:
-                self.activeWp = self._wpDict[uid]
-                self.activeWpUID = uid
-                sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
-                self.redraw()
-            else:
-                self.activeAsyUID = uid
-                self.activeAsy = item
-                sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
-            self.treeView.clearSelection()
-            self.itemClicked = None
-            self.statusBar().showMessage(sbText, 5000)
-
-    def setTransparent(self):
-        item = self.itemClicked
-        if item:
-            uid = int(item.text(1))
-            if uid in self._partDict:
-                self._transparencyDict[uid] = 0.6
-                self.redraw()
-            self.itemClicked = None
-
-    def setOpaque(self):
-        item = self.itemClicked
-        if item:
-            uid = int(item.text(1))
-            if uid in self._partDict:
-                self._transparencyDict.pop(uid)
-                self.redraw()
-            self.itemClicked = None
-               
-    def editName(self): # Edit name of item clicked in treeView
-        item = self.itemClicked
-        sbText = '' # status bar text
-        if item:
-            name = item.text(0)
-            uid = int(item.text(1))
-            prompt = 'Enter new name for part %s' % name
-            newName, OK = QInputDialog.getText(self, 'Input Dialog',
-                                               prompt, text=name)
-            if OK:
-                item.setText(0, newName)
-                sbText = "Part name changed to %s" % newName
-                self._nameDict[uid] = newName
-        self.treeView.clearSelection()
-        self.itemClicked = None
-        # Todo: update name in treeModel
-        self.statusBar().showMessage(sbText, 5000)
-
     ####  Relay functions: (give calculator access to module functions)
 
     def distPtPt(self):
@@ -408,19 +468,6 @@ class MainWindow(QMainWindow):
 
     def edgeLen(self):
         edgeLen()
-
-    ####  Administrative and data management methods:
-
-    def traverseTreeView(self):
-        root = self.treeViewRoot
-        child_count = root.childCount()
-        for i in range(child_count):
-            item = root.child(i)
-            print(f"UID: {item.text(1)}; Name: {item.text(0)}")
-
-    def syncModelToView(self):
-        """ """
-        iterator = QTreeWidgetItemIterator(self.treeView)
 
     def launchCalc(self):
         if not self.calculator:
@@ -433,6 +480,8 @@ class MainWindow(QMainWindow):
             self.unitscale = self._unitDict[self.units]
             self.unitsLabel.setText("Units: %s " % self.units)
     
+    ####  Administrative and data management methods:
+
     def printCurrUID(self):
         print(self._currentUID)
 
@@ -516,6 +565,8 @@ class MainWindow(QMainWindow):
         item = QTreeWidgetItem(self.treeViewRoot, itemName)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
+        # show as active in treeView
+        # self.setActive(item)
         # Add new uid to draw list and sync w/ treeView
         self.drawList.append(uid)
         self.syncCheckedToDrawList()
@@ -2125,7 +2176,7 @@ if __name__ == '__main__':
     win.add_menu('Utility')
     win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
     win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
-    win.add_function_to_menu('Utility', "print(Children of Root)", win.traverseTreeView)
+    win.add_function_to_menu('Utility', "print(TreeViewData)", win.printTreeView)
     win.add_function_to_menu('Utility', "print(Active WP UID)", win.printActiveWpUID)
     win.add_function_to_menu('Utility', "print(Active Asy UID)", win.printActiveAsyUID)
     win.add_function_to_menu('Utility', "print(Active Asy Info)", win.printActiveAsyInfo)
@@ -2145,7 +2196,7 @@ if __name__ == '__main__':
     drawSubMenu.addAction('Draw All', win.drawAll)    
     drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
 
-    win.treeView.popMenu.addAction('Set Active', win.setActive)
+    win.treeView.popMenu.addAction('Set Active', win.setClickedActive)
     win.treeView.popMenu.addAction('Make Transparent', win.setTransparent)
     win.treeView.popMenu.addAction('Make Opaque', win.setOpaque)
     win.treeView.popMenu.addAction('Edit Name', win.editName)
