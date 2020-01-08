@@ -424,43 +424,6 @@ class MainWindow(QMainWindow):
         # Todo: update name in treeModel
         self.statusBar().showMessage(sbText, 5000)
 
-    def printTreeView(self):
-        """Print 'uid'; 'name'; 'parent' for all items in treeView."""
-        iterator = QTreeWidgetItemIterator(self.treeView)
-        while iterator.value():
-            item = iterator.value()
-            name = item.text(0)
-            strUID = item.text(1)
-            uid = int(strUID)
-            pname = None
-            parent = item.parent()
-            if parent:
-                puid = parent.text(1)
-                pname = parent.text(0)
-            print(f"UID: {uid}; Name: {name}; Parent: {pname}")
-            iterator += 1
-
-    def getPartsInAssy(self, uid):
-        if uid not in self._assyDict.keys():
-            print("This node is not an assembly")
-        else:
-            asyPrtTree = []
-            leafNodes = self.treeModel.leaves(uid)
-            for node in leafNodes:
-                pid = node.identifier
-                if pid in self._partDict.keys():
-                    asyPrtTree.append(pid)
-            return asyPrtTree
-
-    def printPartsInActiveAssy(self):
-        asyPrtTree = []
-        leafNodes = self.treeModel.leaves(self.activeAsyUID)
-        for node in leafNodes:
-            pid = node.identifier
-            if pid in self._partDict.keys():
-                asyPrtTree.append(pid)
-        print(asyPrtTree)
-
     ####  Relay functions: (give calculator access to module functions)
 
     def distPtPt(self):
@@ -481,24 +444,6 @@ class MainWindow(QMainWindow):
             self.unitsLabel.setText("Units: %s " % self.units)
     
     ####  Administrative and data management methods:
-
-    def printCurrUID(self):
-        print(self._currentUID)
-
-    def printActiveAsyUID(self):
-        print(self.activeAsyUID)
-
-    def printActiveAsyInfo(self):
-        print(f"Name: {self.activeAsy}")
-        print(f"UID: {self.activeAsyUID}")
-
-    def printActiveWpInfo(self):
-        print(f"Name: {self.activeWp}")
-        print(f"UID: {self.activeWpUID}")
-
-    def printActivePartInfo(self):
-        print(f"Name: {self.activePart}")
-        print(f"UID: {self.activePartUID}")
 
     def getNewPartUID(self, objct, name="", ancestor=0,
                       typ='p', color=None):
@@ -572,7 +517,7 @@ class MainWindow(QMainWindow):
         return uid
 
     def appendToStack(self):    # called when <ret> is pressed on line edit
-        self.lineEditStack.append(unicode(self.lineEdit.text()))
+        self.lineEditStack.append(self.lineEdit.text())
         self.lineEdit.clear()
         cb = self.registeredCallback
         if cb:
@@ -2122,6 +2067,30 @@ def mergePart(workPart=None):
 def topoDumpAP():
     Topology.dumpTopology(win.activePart)
         
+def printCurrUID():
+    print(win._currentUID)
+
+def printActiveAsyInfo():
+    print(f"Name: {win.activeAsy}")
+    print(f"UID: {win.activeAsyUID}")
+
+def printActiveWpInfo():
+    print(f"Name: {win.activeWp}")
+    print(f"UID: {win.activeWpUID}")
+
+def printActivePartInfo():
+    print(f"Name: {win.activePart}")
+    print(f"UID: {win.activePartUID}")
+
+def printPartsInActiveAssy():
+    asyPrtTree = []
+    leafNodes = win.treeModel.leaves(self.activeAsyUID)
+    for node in leafNodes:
+        pid = node.identifier
+        if pid in win._partDict:
+            asyPrtTree.append(pid)
+    print(asyPrtTree)
+
 def printActPart():
     uid = win.activePartUID
     if uid:
@@ -2129,6 +2098,22 @@ def printActPart():
         print("Active Part: %s [uid=%i]" % (name, int(uid)))
     else:
         print(None)
+
+def printTreeView():
+    """Print 'uid'; 'name'; 'parent' for all items in treeView."""
+    iterator = QTreeWidgetItemIterator(win.treeView)
+    while iterator.value():
+        item = iterator.value()
+        name = item.text(0)
+        strUID = item.text(1)
+        uid = int(strUID)
+        pname = None
+        parent = item.parent()
+        if parent:
+            puid = parent.text(1)
+            pname = parent.text(0)
+        print(f"UID: {uid}; Name: {name}; Parent: {pname}")
+        iterator += 1
 
 def clearPntStack():
     win.ptStack = []
@@ -2174,11 +2159,11 @@ if __name__ == '__main__':
     win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
     win.add_menu('Utility')
     win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
-    win.add_function_to_menu('Utility', "print(current UID)", win.printCurrUID)
-    win.add_function_to_menu('Utility', "print(TreeViewData)", win.printTreeView)
-    win.add_function_to_menu('Utility', "print(Active Wp Info)", win.printActiveWpInfo)
-    win.add_function_to_menu('Utility', "print(Active Asy Info)", win.printActiveAsyInfo)
-    win.add_function_to_menu('Utility', "print(Active Prt Info)", win.printActivePartInfo)
+    win.add_function_to_menu('Utility', "print(current UID)", printCurrUID)
+    win.add_function_to_menu('Utility', "print(TreeViewData)", printTreeView)
+    win.add_function_to_menu('Utility', "print(Active Wp Info)", printActiveWpInfo)
+    win.add_function_to_menu('Utility', "print(Active Asy Info)", printActiveAsyInfo)
+    win.add_function_to_menu('Utility', "print(Active Prt Info)", printActivePartInfo)
     win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
     win.add_function_to_menu('Utility', "Calculator", win.launchCalc)
     win.add_function_to_menu('Utility', "set Units ->in", setUnits_in)
