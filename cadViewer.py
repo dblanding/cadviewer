@@ -68,6 +68,7 @@ from OCC.Core.IntAna import IntAna_IntConicQuad
 from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.Precision import precision_Angular, precision_Confusion
 from OCC.Core.Prs3d import Prs3d_Drawer
+from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
 from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
                              topods_Vertex)
@@ -682,6 +683,7 @@ class MainWindow(QMainWindow):
         name = os.path.basename(fname).split('.')[0]
         nextUID = self._currentUID
         stepImporter = stepXD.StepImporter(fname, nextUID)
+        self.doc = stepImporter.doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
         treeguts = tree.expand_tree(mode=self.treeModel.DEPTH)
@@ -753,6 +755,8 @@ class MainWindow(QMainWindow):
         assert(status == IFSelect_RetDone)
 
     def saveStep(self):
+        """Export self.doc to STEP file."""
+
         prompt = 'Choose filename for step file.'
         fnametuple = QFileDialog.getSaveFileName(None, prompt, './',
                                                  "STEP files (*.stp *.STP *.step)")
@@ -761,7 +765,17 @@ class MainWindow(QMainWindow):
             print("Save step cancelled.")
             return
         else:
-            print(fname)
+            # Try modifying self.doc by adding active part to root node.
+            pass
+
+        # initialize the STEP exporter
+        step_writer = STEPCAFControl_Writer()
+
+        # transfer shapes and write file
+        step_writer.Transfer(self.doc)
+        status = step_writer.Write(fname)
+        assert(status == IFSelect_RetDone)
+
 
 #############################################
 #
