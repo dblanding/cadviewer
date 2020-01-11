@@ -67,7 +67,7 @@ class StepImporter():
         self._currentUID = nextUID
         self.assyUidStack = [0]
         self.assyLocStack = []
-        self.read_file()
+        self.doc = self.read_file()  # TDocStd_Document
 
     def getNewUID(self):
         uid = self._currentUID + 1
@@ -183,12 +183,6 @@ class StepImporter():
             step_reader.Transfer(doc)
 
         """
-        # Test round trip by writing doc back to another file (this works)
-        logger.info("Doing a 'short-circuit' Round Trip test")
-        doctype = type(doc)  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
-        logger.info(f"Writing {doctype} back to another STEP file")
-        self.testRTStep(doc)
-
         # Save doc to file (for educational purposes) (not working yet)
         logger.debug("Saving doc to file")
         savefilename = TCollection_ExtendedString('../doc.txt')
@@ -283,33 +277,5 @@ class StepImporter():
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None,
                                            'c': color, 's': shape})
-        return True
 
-    def testRTStep(self, doc):
-        """A 'short-circuit' Round Trip test. Write doc back to step file."""
-
-        fname = "../testRoundTrip.stp"
-
-        # initialize the STEP exporter
-        step_writer = STEPCAFControl_Writer()
-
-        # transfer shapes and write file
-        step_writer.Transfer(doc)
-        status = step_writer.Write(fname)
-        assert(status == IFSelect_RetDone)
-
-class StepExporter():
-    """
-    Export an assembly to a step file, collecting a complete and accurate
-    Assembly/Part structure, including the names of parts and assemblies,
-    part color, and with all components shown in their correct positions.
-    """
-
-    def __init__(self, filename):
-
-        self.filename = filename
-        print(filename)
-        self.tree = treelib.tree.Tree()  # to hold assembly structure
-
-    def write_file(treenode):
-        print(treenode)
+        return doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
