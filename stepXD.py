@@ -50,7 +50,7 @@ from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
 from OCC.Extend.TopologyUtils import TopologyExplorer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO) # set to DEBUG | INFO | ERROR
+logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
 class StepImporter():
     """
@@ -196,21 +196,21 @@ class StepImporter():
         self.shape_tool = shape_tool
         logger.info('Number of labels at root : %i' % labels.Length())
         try:
-            label = labels.Value(1) # First label at root
+            rootlabel = labels.Value(1) # First label at root
         except RuntimeError:
             return
-        name = self.getName(label)
+        name = self.getName(rootlabel)
         logger.info('Name of root label: %s' % name)
-        isAssy = shape_tool.IsAssembly(label)
+        isAssy = shape_tool.IsAssembly(rootlabel)
         logger.info("First label at root holds an assembly? %s" % isAssy)
         if isAssy:
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
             # No need to examine other labels at root explicitly.
             topLoc = TopLoc_Location()
-            topLoc = shape_tool.GetLocation(label)
+            topLoc = shape_tool.GetLocation(rootlabel)
             self.assyLocStack.append(topLoc)
-            entry = label.EntryDumpToString()
+            entry = rootlabel.EntryDumpToString()
             logger.debug("Entry: %s" % entry)
             logger.debug("Top assy name: %s" % name)
             # Create root node for top assy
@@ -222,12 +222,12 @@ class StepImporter():
             self.assyUidStack.append(newAssyUID)
             topComps = TDF_LabelSequence() # Components of Top Assy
             subchilds = False
-            isAssy = shape_tool.GetComponents(label, topComps, subchilds)
+            isAssy = shape_tool.GetComponents(rootlabel, topComps, subchilds)
             logger.debug("Is Assembly? %s" % isAssy)
             logger.debug("Number of components: %s" % topComps.Length())
-            logger.debug("Is Reference? %s" % shape_tool.IsReference(label))
+            logger.debug("Is Reference? %s" % shape_tool.IsReference(rootlabel))
             if topComps.Length():
-                self.findComponents(label, topComps)
+                self.findComponents(rootlabel, topComps)
         else:
             # Labels at root can hold solids or compounds (which are 'crude' assemblies)
             # Either way, we will need to create a root node in self.tree
