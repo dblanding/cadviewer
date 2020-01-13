@@ -25,8 +25,6 @@
 #
 
 
-from __future__ import absolute_import
-
 from itertools import islice
 import logging
 import math
@@ -70,6 +68,10 @@ from OCC.Core.Precision import precision_Angular, precision_Confusion
 from OCC.Core.Prs3d import Prs3d_Drawer
 from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCC.Core.TCollection import (TCollection_ExtendedString,
+                                  TCollection_AsciiString)
+from OCC.Core.TDataStd import TDataStd_Name
+from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
 from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
                              topods_Vertex)
 from OCC.Core.TopLoc import TopLoc_Location
@@ -77,6 +79,11 @@ from OCC.Core.TopTools import TopTools_ListOfShape
 from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
                                Quantity_NOC_GRAY, Quantity_NOC_BLACK,
                                Quantity_NOC_DARKGREEN)
+from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
+                              XCAFDoc_DocumentTool_ColorTool,
+                              XCAFDoc_DocumentTool_LayerTool,
+                              XCAFDoc_DocumentTool_MaterialTool,
+                              XCAFDoc_ColorSurf)
 from OCCUtils import Construct, Topology
 import OCC.Display.OCCViewer
 import OCC.Display.backend
@@ -765,8 +772,34 @@ class MainWindow(QMainWindow):
             print("Save step cancelled.")
             return
         else:
-            # Try modifying self.doc by adding active part to root node.
-            pass
+            # Reconstruct XCAFDoc related code from stepXD.StepImporter
+            labels = TDF_LabelSequence()
+            color_labels = TDF_LabelSequence()
+            shape_tool = XCAFDoc_DocumentTool_ShapeTool(self.doc.Main())
+            shape_tool.GetShapes(labels)
+            logger.info('Number of labels at root : %i' % labels.Length())
+            try:
+                rootlabel = labels.Value(1) # First label at root
+            except RuntimeError:
+                return
+            name = rootlabel.GetLabelName()
+            logger.info('Name of root label: %s' % name)
+            isAssy = shape_tool.IsAssembly(rootlabel)
+            logger.info("First label at root holds an assembly? %s" % isAssy)
+
+            # Modify self.doc by adding active part to rootlabel.
+            #Standard_Boolean expand = Standard_False; //default 
+            #TDF_Label aLabel = myAssembly->AddComponent (aShape [,expand]);
+            newLabel = shape_tool.AddComponent(rootlabel, self.activePart, True)
+            #set a name to newlabel (as a reminder using OCAF), use:
+            #TCollection_ExtendedString aName ...;
+            #// contains the desired name for this Label (ASCII)
+            #TDataStd_Name::Set (aLabel, aName);
+            newName = TCollection_ExtendedString(self._nameDict[self.activePartUID])
+            TDataStd_Name.Set(newLabel, newName)
+            logger.info('Name of new part: %s' % newName)
+            #myAssembly->UpdateAssemblies();
+            shape_tool.UpdateAssemblies()
 
         # initialize the STEP exporter
         step_writer = STEPCAFControl_Writer()

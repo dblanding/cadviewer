@@ -37,16 +37,20 @@ The calculator works and seems to be communicating with the main window.
 
 Here's my todo list, roughly in order of priority:
 
+	Port some of my old code form /misc to run on latest pyocc & Python3
+
+	Adopt XCAF doc as tree model. Be able to save & load from file
+
 	Get toolbar buttons working.
 
-	Modify Utility functions to output to a QtDialog rather than to console
-
-	Get 'Modify 3D' funcitons working
+	Get 'Modify 3D' functions working
 
 	Clean up code with a linter.
 
 	Assign a version number.
 
-	Add abiltiy to write STEP file of assembly selected from tree.
+	Add ability to write STEP file of assembly selected from tree.
 
 	Add ability to create, modify and move 3D parts & assemblies.
+	checkout links in Jelle's post:
+	https://groups.google.com/forum/#!topic/pythonocc/Ed86PGoNtIs
