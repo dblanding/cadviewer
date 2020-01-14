@@ -88,34 +88,35 @@ class StepImporter():
                                                    color.Blue()))
         return color
 
-    def findComponents(self, label, comps): # Discover Components of an Assembly
+    def findComponents(self, label, comps):
+        """Discover components from comps (LabelSequence) of an assembly (label).
+
+        Components of an assembly are, by definition, references which refer to
+        either a shape or another assembly. Components are essentially 'instances'
+        of the referred shape or assembly. The component label will carry a location
+        vector which specifies the location of the referred shape or assembly.
+        """
         logger.debug("")
-        logger.debug("Finding components of label (entry = %s)" % label.EntryDumpToString())
+        logger.debug("Finding components of label entry %s)" % label.EntryDumpToString())
         for j in range(comps.Length()):
             logger.debug("loop %i of %i" % (j+1, comps.Length()))
-            cLabel = comps.Value(j+1)
+            cLabel = comps.Value(j+1)  # component label <class 'OCC.Core.TDF.TDF_Label'>
             cShape = self.shape_tool.GetShape(cLabel)
-            logger.debug("Label %i - type : %s" % (j+1, type(cLabel)))
-            logger.debug("Entry: %s" % cLabel.EntryDumpToString())
+            logger.debug(f"Component number {j+1}")
+            logger.debug("Component entry: %s" % cLabel.EntryDumpToString())
             name = self.getName(cLabel)
-            logger.debug("Part name: %s" % name)
-            logger.debug("Is Assembly? %s" % self.shape_tool.IsAssembly(cLabel))
-            logger.debug("Is Component? %s" % self.shape_tool.IsComponent(cLabel))
-            logger.debug("Is Simple Shape? %s" % self.shape_tool.IsSimpleShape(cLabel))
-            logger.debug("Is Reference? %s" % self.shape_tool.IsReference(cLabel))
-            refLabel = TDF_Label()
+            logger.debug("Component name: %s" % name)
+            refLabel = TDF_Label()  # label of referred shape (or assembly)
             isRef = self.shape_tool.GetReferredShape(cLabel, refLabel)
-            if isRef:
+            if isRef:  # I think all components are references, but just in case...
                 refShape = self.shape_tool.GetShape(refLabel)
                 refLabelEntry = refLabel.EntryDumpToString()
-                logger.debug("Entry of referred shape: %s" % refLabelEntry)
+                logger.debug("Entry referred to: %s" % refLabelEntry)
                 refName = self.getName(refLabel)
-                logger.debug("Name of referred shape: %s" % refName)
-                logger.debug("Is Assembly? %s" % self.shape_tool.IsAssembly(refLabel))
-                logger.debug("Is Component? %s" % self.shape_tool.IsComponent(refLabel))
-                logger.debug("Is Simple Shape? %s" % self.shape_tool.IsSimpleShape(refLabel))
-                logger.debug("Is Reference? %s" % self.shape_tool.IsReference(refLabel))
+                logger.debug("Name of referred item: %s" % refName)
                 if self.shape_tool.IsSimpleShape(refLabel):
+                    logger.debug("Referred item is a Shape")
+                    logger.debug("Name of Shape: %s" % refName)
                     tempAssyLocStack = list(self.assyLocStack)
                     tempAssyLocStack.reverse()
 
@@ -128,8 +129,11 @@ class StepImporter():
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None, 'c': color, 's': cShape})
                 elif self.shape_tool.IsAssembly(refLabel):
+                    logger.debug("Referred item is an Assembly")
+                    logger.debug("Name of Assembly: %s" % refName)
                     name = self.getName(cLabel)  # Instance name
                     aLoc = TopLoc_Location()
+                    # Location vector is carried by component
                     aLoc = self.shape_tool.GetLocation(cLabel)
                     self.assyLocStack.append(aLoc)
                     newAssyUID = self.getNewUID()
