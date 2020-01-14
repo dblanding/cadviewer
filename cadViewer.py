@@ -297,9 +297,7 @@ class MainWindow(QMainWindow):
             self.redraw()
 
     def checkedToList(self):
-        """
-        Returns list of uid's of checked (part) items in treeView
-        """
+        """Returns list of uid's of checked (part) items in treeView"""
         dl = []
         for item in self.treeView.findItems("", Qt.MatchContains | Qt.MatchRecursive):
             if item.checkState(0) == 2:
@@ -524,7 +522,7 @@ class MainWindow(QMainWindow):
         self.syncCheckedToDrawList()
         return uid
 
-    def appendToStack(self):    # called when <ret> is pressed on line edit
+    def appendToStack(self):  # called when <ret> is pressed on line edit
         self.lineEditStack.append(self.lineEdit.text())
         self.lineEdit.clear()
         cb = self.registeredCallback
