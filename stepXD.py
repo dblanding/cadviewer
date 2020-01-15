@@ -30,7 +30,7 @@
 import logging
 import os.path
 import treelib
-
+from treemodel import TreeModel
 from OCC.Core.IFSelect import IFSelect_RetDone
 from OCC.Core.Quantity import Quantity_Color
 from OCC.Core.STEPCAFControl import (STEPCAFControl_Reader,
@@ -162,18 +162,9 @@ class StepImporter():
         'a' (isAssy?), 'l' (TopLoc_Location), 'c' (Quantity_Color), 's' (TopoDS_Shape)
         """
         logger.info("Reading STEP file")
-        doc = TDocStd_Document(TCollection_ExtendedString("STEP"))
-
-        # Create the application
-        app = XCAFApp_Application_GetApplication()
-        app.NewDocument(TCollection_ExtendedString("MDTV-CAF"), doc)
-
-        # Get root shapes
-        shape_tool = XCAFDoc_DocumentTool_ShapeTool(doc.Main())
-        shape_tool.SetAutoNaming(True)
-        self.color_tool = XCAFDoc_DocumentTool_ColorTool(doc.Main())
-        layer_tool = XCAFDoc_DocumentTool_LayerTool(doc.Main())
-        l_materials = XCAFDoc_DocumentTool_MaterialTool(doc.Main())
+        tmodel = TreeModel("STEP")
+        self.shape_tool = tmodel.shape_tool
+        self.color_tool = tmodel.color_tool
 
         step_reader = STEPCAFControl_Reader()
         step_reader.SetColorMode(True)
@@ -184,7 +175,7 @@ class StepImporter():
         status = step_reader.ReadFile(self.filename)
         if status == IFSelect_RetDone:
             logger.info("Transfer doc to STEPCAFControl_Reader")
-            step_reader.Transfer(doc)
+            step_reader.Transfer(tmodel.doc)
 
         """
         # Save doc to file (for educational purposes) (not working yet)
@@ -196,8 +187,7 @@ class StepImporter():
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
 
-        shape_tool.GetShapes(labels)
-        self.shape_tool = shape_tool
+        self.shape_tool.GetShapes(labels)
         logger.info('Number of labels at root : %i' % labels.Length())
         try:
             rootlabel = labels.Value(1) # First label at root
@@ -205,14 +195,14 @@ class StepImporter():
             return
         name = self.getName(rootlabel)
         logger.info('Name of root label: %s' % name)
-        isAssy = shape_tool.IsAssembly(rootlabel)
+        isAssy = self.shape_tool.IsAssembly(rootlabel)
         logger.info("First label at root holds an assembly? %s" % isAssy)
         if isAssy:
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
             # No need to examine other labels at root explicitly.
             topLoc = TopLoc_Location()
-            topLoc = shape_tool.GetLocation(rootlabel)
+            topLoc = self.shape_tool.GetLocation(rootlabel)
             self.assyLocStack.append(topLoc)
             entry = rootlabel.EntryDumpToString()
             logger.debug("Entry: %s" % entry)
@@ -226,10 +216,10 @@ class StepImporter():
             self.assyUidStack.append(newAssyUID)
             topComps = TDF_LabelSequence() # Components of Top Assy
             subchilds = False
-            isAssy = shape_tool.GetComponents(rootlabel, topComps, subchilds)
+            isAssy = self.shape_tool.GetComponents(rootlabel, topComps, subchilds)
             logger.debug("Is Assembly? %s" % isAssy)
             logger.debug("Number of components: %s" % topComps.Length())
-            logger.debug("Is Reference? %s" % shape_tool.IsReference(rootlabel))
+            logger.debug("Is Reference? %s" % self.shape_tool.IsReference(rootlabel))
             if topComps.Length():
                 self.findComponents(rootlabel, topComps)
         else:
@@ -244,7 +234,7 @@ class StepImporter():
             for j in range(labels.Length()):
                 label = labels.Value(j+1)
                 name = self.getName(label)
-                isAssy = shape_tool.IsAssembly(label)
+                isAssy = self.shape_tool.IsAssembly(label)
                 logger.debug("Label %i is assembly?: %s" % (j+1, isAssy))
                 shape = shape_tool.GetShape(label)
                 color = self.getColor(shape)
@@ -282,4 +272,4 @@ class StepImporter():
                                           {'a': False, 'l': None,
                                            'c': color, 's': shape})
 
-        return doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
+        return tmodel.doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
