@@ -19,10 +19,11 @@ class TreeModel():
 
     def __init__(self, title):
         # Create the application and document
-        self.doc = TDocStd_Document(TCollection_ExtendedString(title))
+        doc = TDocStd_Document(TCollection_ExtendedString(title))
         app = XCAFApp_Application_GetApplication()
-        app.NewDocument(TCollection_ExtendedString("MDTV-CAF"), self.doc)
+        app.NewDocument(TCollection_ExtendedString("MDTV-CAF"), doc)
         self.app = app
+        self.doc = doc
         # Initialize tools
         self.shape_tool = XCAFDoc_DocumentTool_ShapeTool(doc.Main())
         self.shape_tool.SetAutoNaming(True)
