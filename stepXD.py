@@ -38,7 +38,7 @@ from OCC.Core.STEPCAFControl import (STEPCAFControl_Reader,
 from OCC.Core.TCollection import (TCollection_ExtendedString,
                                   TCollection_AsciiString)
 from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
-from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
+from OCC.Core.TDF import TDF_Label, TDF_LabelSequence, TDF_ChildIterator
 from OCC.Core.TDocStd import TDocStd_Document
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
@@ -193,6 +193,9 @@ class StepImporter():
             rootlabel = labels.Value(1) # First label at root
         except RuntimeError:
             return
+        # Get list of child labels below rootlabel
+        childlist = tmodel.getChildLabels(rootlabel)
+        breakpoint()
         name = self.getName(rootlabel)
         logger.info('Name of root label: %s' % name)
         isAssy = self.shape_tool.IsAssembly(rootlabel)
