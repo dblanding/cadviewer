@@ -228,8 +228,8 @@ class MainWindow(QMainWindow):
         self._currentUID = 0
         self._wpNmbr = 1
         self.drawList = [] # list of part uid's to be displayed
-        self.treeModel = treelib.Tree()  # Assy/Part Structure (model)
-        self.treeModel.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
+        #self.treeModel = treelib.Tree()  # Assy/Part Structure (model)
+        #self.treeModel.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
         itemName = ['/', str(0)]
         self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
         self.treeView.expandItem(self.treeViewRoot)
@@ -486,27 +486,18 @@ class MainWindow(QMainWindow):
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
-            self.treeModel.create_node(name,
-                                  uid,
-                                  0,
-                                  {'a': False, 'l': None, 'c': c, 's': objct})
+            #self.treeModel.create_node(name, uid, 0, {'a': False, 'l': None, 'c': c, 's': objct})
             # Make new part active
             self.activePartUID = uid
             self.activePart = objct
         elif typ == 'a':
             self._assyDict[uid] = objct  # TopLoc_Location
-            self.treeModel.create_node(name,
-                                  uid,
-                                  0,
-                                  {'a': True, 'l': None, 'c': None, 's': None})
+            #self.treeModel.create_node(name, uid, 0, {'a': True, 'l': None, 'c': None, 's': None})
         elif typ == 'w':
             name = "wp%i" % self._wpNmbr
             self._wpNmbr += 1
             self._wpDict[uid] = objct # wpObject
-            self.treeModel.create_node(name,
-                                  uid,
-                                  0,
-                                  {'a': False, 'l': None, 'c': None, 's': None})
+            #self.treeModel.create_node(name, uid, 0, {'a': False, 'l': None, 'c': None, 's': None})
             self.activeWp = objct
             self.activeWpUID = uid
         self._nameDict[uid] = name
@@ -691,7 +682,7 @@ class MainWindow(QMainWindow):
         self.doc = stepImporter.doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
-        treeguts = tree.expand_tree(mode=self.treeModel.DEPTH)
+        treeguts = tree.expand_tree(mode=tree.DEPTH)
         for uid in treeguts:  # type(uid) == int
             node = tree.get_node(uid)
             name = node.tag
@@ -731,7 +722,7 @@ class MainWindow(QMainWindow):
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
                 self.drawList.append(uid)   # Add to draw list
-        self.treeModel.paste(0, tree) # Paste tree onto win.tree root
+        #self.treeModel.paste(0, tree) # Paste tree onto win.tree root
         
         keyList = tempTreeDict.keys()
         keyList = list(keyList)
