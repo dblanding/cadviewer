@@ -233,7 +233,7 @@ class StepImporter():
                 name = self.getName(label)
                 isAssy = self.shape_tool.IsAssembly(label)
                 logger.debug("Label %i is assembly?: %s" % (j+1, isAssy))
-                shape = shape_tool.GetShape(label)
+                shape = self.shape_tool.GetShape(label)
                 color = self.getColor(shape)
                 isSimpleShape = self.shape_tool.IsSimpleShape(label)
                 logger.debug("Is Simple Shape? %s" % isSimpleShape)

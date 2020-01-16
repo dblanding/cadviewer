@@ -1398,11 +1398,10 @@ height = 70
 thickness = 30
 
 def makeBottle(): # complete bottle
-    startBottle(startOnly=False)
+    startBottle(complete=True)
 
-def startBottle(startOnly=True): # minus the neck fillet, shelling & threads
-    start = startOnly
-    breakpoint()
+def startBottle(complete=False): # minus the neck fillet, shelling & threads
+    complete = complete
     partName = "Bottle-start"
     # The points we'll use to create the profile of the bottle's body
     aPnt1 = gp_Pnt(-width / 2.0, 0, 0)
@@ -1474,7 +1473,7 @@ def startBottle(startOnly=True): # minus the neck fillet, shelling & threads
 
     mkCylinder = BRepPrimAPI_MakeCylinder(neckAx2, myNeckRadius, myNeckHeight)
     myBody = BRepAlgoAPI_Fuse(myBody , mkCylinder.Shape())
-    if start: # quit here
+    if not complete: # quit here
         uid = win.getNewPartUID(myBody.Shape(), name=partName)
         win.redraw()
         return
@@ -1787,16 +1786,16 @@ if __name__ == '__main__':
     win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
     win.add_function_to_menu('Modify Active Part', "Remove Face", remFace)
     win.add_menu('Bottle')
-    win.add_function_to_menu('Bottle', "make points", makePoints)
-    win.add_function_to_menu('Bottle', "make lines", makeLines)
-    win.add_function_to_menu('Bottle', "make half wire", makeHalfWire)
-    win.add_function_to_menu('Bottle', "make whole wire", makeWholeWire)
-    win.add_function_to_menu('Bottle', "make face", makeFace)
-    win.add_function_to_menu('Bottle', "make body", makeBody)
-    win.add_function_to_menu('Bottle', "make fillets", makeFillets)
-    win.add_function_to_menu('Bottle', "add neck", addNeck)
+    win.add_function_to_menu('Bottle', "Step 1: points", makePoints)
+    win.add_function_to_menu('Bottle', "Step 2: lines", makeLines)
+    win.add_function_to_menu('Bottle', "Step 3: half wire", makeHalfWire)
+    win.add_function_to_menu('Bottle', "Step 4: whole wire", makeWholeWire)
+    win.add_function_to_menu('Bottle', "Step 5: face", makeFace)
+    win.add_function_to_menu('Bottle', "Step 6: body", makeBody)
+    win.add_function_to_menu('Bottle', "Step 7: fillets", makeFillets)
+    win.add_function_to_menu('Bottle', "Step 8: neck", addNeck)
     win.add_function_to_menu('Bottle', "start bottle", startBottle)
-    win.add_function_to_menu('Bottle', "make bottle", makeBottle)
+    win.add_function_to_menu('Bottle', "complete bottle", makeBottle)
     win.add_menu('Utility')
     win.add_function_to_menu('Utility', "Topology of Act Prt", topoDumpAP)
     win.add_function_to_menu('Utility', "print(current UID)", printCurrUID)
