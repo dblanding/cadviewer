@@ -70,6 +70,10 @@ class StepImporter():
         self.doc = self.read_file()  # TDocStd_Document
 
     def getNewUID(self):
+        """Dispense a series of sequential integers as uids.
+
+        Start with one more than the value held in win._currentUID.
+        When finished, update the value held in win._currentUID."""
         uid = self._currentUID + 1
         self._currentUID = uid
         return uid
@@ -93,8 +97,8 @@ class StepImporter():
 
         Components of an assembly are, by definition, references which refer to
         either a shape or another assembly. Components are essentially 'instances'
-        of the referred shape or assembly. The component label will carry a location
-        vector which specifies the location of the referred shape or assembly.
+        of the referred shape or assembly, and carry a location vector specifing
+        the location of the referred shape or assembly.
         """
         logger.debug("")
         logger.debug("Finding components of label entry %s)" % label.EntryDumpToString())
@@ -155,8 +159,9 @@ class StepImporter():
         return
 
     def read_file(self):
-        """Build self.tree (treelib.Tree()) containing CAD data read from a step file.
+        """Build tree = treelib.Tree() to facilitate displaying the CAD model and
 
+        constructing the tree view showing the assembly/component relationships.
         Each node of self.tree contains the following:
         (Name, UID, ParentUID, {Data}) where the Data keys are:
         'a' (isAssy?), 'l' (TopLoc_Location), 'c' (Quantity_Color), 's' (TopoDS_Shape)
@@ -177,13 +182,6 @@ class StepImporter():
             logger.info("Transfer doc to STEPCAFControl_Reader")
             step_reader.Transfer(tmodel.doc)
 
-        """
-        # Save doc to file (for educational purposes) (not working yet)
-        logger.debug("Saving doc to file")
-        savefilename = TCollection_ExtendedString('../doc.txt')
-        app.SaveAs(doc, savefilename)
-        """
-
         labels = TDF_LabelSequence()
         color_labels = TDF_LabelSequence()
 
@@ -195,7 +193,6 @@ class StepImporter():
             return
         # Get list of child labels below rootlabel
         childlist = tmodel.getChildLabels(rootlabel)
-        breakpoint()
         name = self.getName(rootlabel)
         logger.info('Name of root label: %s' % name)
         isAssy = self.shape_tool.IsAssembly(rootlabel)
@@ -203,7 +200,7 @@ class StepImporter():
         if isAssy:
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
-            # No need to examine other labels at root explicitly.
+            # there is no need to examine other labels at root explicitly.
             topLoc = TopLoc_Location()
             topLoc = self.shape_tool.GetLocation(rootlabel)
             self.assyLocStack.append(topLoc)
@@ -212,9 +209,7 @@ class StepImporter():
             logger.debug("Top assy name: %s" % name)
             # Create root node for top assy
             newAssyUID = self.getNewUID()
-            self.tree.create_node(name,
-                                  newAssyUID,
-                                  None,
+            self.tree.create_node(name, newAssyUID, None,
                                   {'a': True, 'l': None, 'c': None, 's': None})
             self.assyUidStack.append(newAssyUID)
             topComps = TDF_LabelSequence() # Components of Top Assy
@@ -230,8 +225,7 @@ class StepImporter():
             # Either way, we will need to create a root node in self.tree
             newAssyUID = self.getNewUID()
             self.tree.create_node(os.path.basename(self.filename),
-                                  newAssyUID,
-                                  None,
+                                  newAssyUID, None,
                                   {'a': True, 'l': None, 'c': None, 's': None})
             self.assyUidStack = [newAssyUID]
             for j in range(labels.Length()):
@@ -255,22 +249,19 @@ class StepImporter():
                     newAssyUID = self.getNewUID()
                     for i, solid in enumerate(topo.solids()):
                         name = "P%s" % str(i+1)
-                        self.tree.create_node(name,
-                                              self.getNewUID(),
+                        self.tree.create_node(name, self.getNewUID(),
                                               self.assyUidStack[-1],
                                               {'a': False, 'l': None,
                                                'c': color, 's': solid})
                 elif shapeType == 2:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SOLID")
-                    self.tree.create_node(name,
-                                          self.getNewUID(),
+                    self.tree.create_node(name, self.getNewUID(),
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None,
                                            'c': color, 's': shape})
                 elif shapeType == 3:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_SHELL")
-                    self.tree.create_node(name,
-                                          self.getNewUID(),
+                    self.tree.create_node(name, self.getNewUID(),
                                           self.assyUidStack[-1],
                                           {'a': False, 'l': None,
                                            'c': color, 's': shape})
