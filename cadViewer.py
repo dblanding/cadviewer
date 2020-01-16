@@ -228,8 +228,6 @@ class MainWindow(QMainWindow):
         self._currentUID = 0
         self._wpNmbr = 1
         self.drawList = [] # list of part uid's to be displayed
-        #self.treeModel = treelib.Tree()  # Assy/Part Structure (model)
-        #self.treeModel.create_node('/', 0, None, {'a':True, 'l':None, 'c':None, 's':None})   # Root Node in TreeModel
         itemName = ['/', str(0)]
         self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
         self.treeView.expandItem(self.treeViewRoot)
@@ -476,7 +474,7 @@ class MainWindow(QMainWindow):
                 self.drawList.remove(ancestor)  # Remove ancestor from draw list
         if not name:
             name = 'Part'   # Default name
-        # Update appropriate dictionaries and add node to treeModel
+        # Update appropriate dictionaries
         if typ == 'p':
             self._partDict[uid] = objct # OCC...
             if color:   # Quantity_Color()
@@ -486,18 +484,15 @@ class MainWindow(QMainWindow):
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
-            #self.treeModel.create_node(name, uid, 0, {'a': False, 'l': None, 'c': c, 's': objct})
             # Make new part active
             self.activePartUID = uid
             self.activePart = objct
         elif typ == 'a':
             self._assyDict[uid] = objct  # TopLoc_Location
-            #self.treeModel.create_node(name, uid, 0, {'a': True, 'l': None, 'c': None, 's': None})
         elif typ == 'w':
             name = "wp%i" % self._wpNmbr
             self._wpNmbr += 1
             self._wpDict[uid] = objct # wpObject
-            #self.treeModel.create_node(name, uid, 0, {'a': False, 'l': None, 'c': None, 's': None})
             self.activeWp = objct
             self.activeWpUID = uid
         self._nameDict[uid] = name
@@ -661,12 +656,30 @@ class MainWindow(QMainWindow):
     ####  Step Load / Save methods:
 
     def loadStep(self):
-        """
-        Load a step file and bring it in as a treelib.Tree() structure
-        Unpack this structure to:
-        1. Populate the various dictionaries: assy, part, name, color and
-        2. Build the Part/Assy structure (treeView), and
-        3. Paste the loaded tree onto win.tree (treeModel)
+        """Load a step file and bring it in as a treelib.Tree() structure.
+
+        Each node of the tree contains the following tuple:
+        (Name, UID, ParentUID, {Data})
+        where the Data dictionary is:
+        {'a': (isAssy?),
+         'l': (TopLoc_Location),
+         'c': (Quantity_Color),
+         's': (TopoDS_Shape)}
+        This format makes it convenient to: 
+        1. Build the assy, part, name and color dictionaries using uid keys,
+        2. Display the model with all its component parts correctly located and
+        3. Build the Part/Assy tree view GUI (QTreeWidget).
+
+        Each QTreeWidgetItem is required to have a unique identifier. This means
+        that multiple instances of the same CAD geometry will each have different
+        uid's.
+
+        TO DO: The Part/Assy tree view GUI and the OCAF data model need to be
+        maintained in sync with each other. Right now, that's not happening.
+        The QTreeWidget Part/Assy tree view GUI makes it easy to 'drag & drop'
+        changes in assembly structure. Also, it's a convenient way to make
+        name changes of parts & assemblies. Those changes need to be propagated
+        to the OCAF data model.
         """
         prompt = 'Select STEP file to import'
         fnametuple = QFileDialog.getOpenFileName(None, prompt, './',
@@ -682,8 +695,8 @@ class MainWindow(QMainWindow):
         self.doc = stepImporter.doc  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
         tree = stepImporter.tree
         tempTreeDict = {}   # uid:asyPrtTreeItem (used temporarily during unpack)
-        treeguts = tree.expand_tree(mode=tree.DEPTH)
-        for uid in treeguts:  # type(uid) == int
+        treedump = tree.expand_tree(mode=tree.DEPTH)
+        for uid in treedump:  # type(uid) == int
             node = tree.get_node(uid)
             name = node.tag
             itemName = [name, str(uid)]
@@ -722,7 +735,6 @@ class MainWindow(QMainWindow):
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
                 self.drawList.append(uid)   # Add to draw list
-        #self.treeModel.paste(0, tree) # Paste tree onto win.tree root
         
         keyList = tempTreeDict.keys()
         keyList = list(keyList)
