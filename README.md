@@ -1,6 +1,18 @@
 # cadviewer
 Simple 3D CAD app using PythonOCC and PyQt5
 
+Jan 16, 2020: Updated 'bottle demo' and added it to the menu bar,
+enabling step by step building of the OCC Classic Bottle.
+
+Jan 4, 2020:  Progress has been better than I had hoped. 
+The basic GUI is all there with all the widgets, 
+STEP files can be loaded and they show up both in the display
+and with their correct assembly structure in the assembly/parts tree, 
+The RMB context menu works, 
+Workplanes can be created using three different methods, 
+The calculator works and seems to be communicating with the main window. 
+
+
 This repo is like an old attic in a sense. It contains various code that I have
 written as I have experimented with what and how I might go about writing
 a CAD application built on PythonOCC.  I decided to post it on GitHub.
@@ -28,18 +40,11 @@ pythonocc-0.16.3 is 4 years old, in the meantime code has changed because of :
 2. There is not Handle anymore. GetHandle and GetObject methods have disappeared. Just pass the object itself, the wrapper decides wether it has to pass the Handle or the Object to the C++ layer. You can check this commit (https://github.com/tpaviot/pythonocc-demos/commit/e59acdce5720d84ce76134789b48c268e36446d6#diff-68b70730ce65eb74e098809766ab3d0d), where we ported the old 'occ bottle example'.
 """
 
-Jan 4, 2020:  Progress has been better than I had hoped. 
-The basic GUI is all there with all the widgets, 
-STEP files can be loaded and they show up both in the display and with their correct assembly structure in the assembly/parts tree, 
-The RMB context menu works, 
-Workplanes can be created using three different methods, 
-The calculator works and seems to be communicating with the main window. 
-
 Here's my todo list, roughly in order of priority:
 
 	Port some of my old code form /misc to run on latest pyocc & Python3
 
-	Adopt XCAF doc as tree model. Be able to save & load from file
+	Adopt OCAF doc as tree model. Be able to save & load from file
 
 	Get toolbar buttons working.
 
@@ -52,5 +57,5 @@ Here's my todo list, roughly in order of priority:
 	Add ability to write STEP file of assembly selected from tree.
 
 	Add ability to create, modify and move 3D parts & assemblies.
-	checkout links in Jelle's post:
+	checkout links in Jelle's old post:
 	https://groups.google.com/forum/#!topic/pythonocc/Ed86PGoNtIs
