@@ -41,30 +41,6 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
                              QInputDialog, QTreeWidgetItemIterator)
-#imports for bottle demo
-from OCC.Core.gp import (gp_Pnt, gp_OX, gp_Vec, gp_Trsf, gp_DZ, gp_Ax2, gp_Ax3,
-                         gp_Pnt2d, gp_Dir2d, gp_Ax2d)
-from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
-from OCC.Core.GCE2d import GCE2d_MakeSegment
-from OCC.Core.Geom import Geom_CylindricalSurface
-from OCC.Core.Geom2d import Geom2d_Ellipse, Geom2d_TrimmedCurve
-from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire,
-                                     BRepBuilderAPI_MakeFace, BRepBuilderAPI_Transform,
-                                     BRepBuilderAPI_MakeVertex)
-from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeCylinder
-from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
-from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
-from OCC.Core.BRepOffsetAPI import (BRepOffsetAPI_MakeThickSolid,
-                                    BRepOffsetAPI_ThruSections)
-from OCC.Core.BRepLib import breplib
-from OCC.Core.BRep import BRep_Builder
-from OCC.Core.GeomAbs import GeomAbs_Plane
-from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-from OCC.Core.TopoDS import topods, topods_Wire, TopoDS_Compound
-from OCC.Core.TopExp import TopExp_Explorer
-from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
-from OCC.Core.TopTools import TopTools_ListOfShape
-
 from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
@@ -852,8 +828,8 @@ class MainWindow(QMainWindow):
         if initial:
             self.registerCallback(distPtPtC)
             # Next 2 lines enable selecting intersection points on WP
-            display.SetSelectionModeVertex()
-            display.SetSelectionModeShape()
+            self.canva._display.SetSelectionModeVertex()
+            self.canva._display.SetSelectionModeShape()
             # User needs to switch to "Select Mode: Vertex" to pick vertices on parts
             statusText = "Dist between 2 pts on WP. (Select Mode: Vertex for parts)"
             self.statusBar().showMessage(statusText)
@@ -878,7 +854,7 @@ class MainWindow(QMainWindow):
     def edgeLen(self, initial=True):
         if initial:
             self.registerCallback(self.edgeLenC)
-            display.SetSelectionModeEdge()
+            self.canva._display.SetSelectionModeEdge()
             statusText = "pick 2 points."
             self.statusBar().showMessage(statusText)
         elif self.edgeStack:

@@ -114,15 +114,6 @@ from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_MaterialTool,
                               XCAFDoc_ColorSurf)
 from OCCUtils import Construct, Topology
-'''
-import OCC.Display.OCCViewer
-import OCC.Display.backend
-from OCC import VERSION
-print("OCC version: %s" % VERSION)
-
-used_backend = OCC.Display.backend.load_backend()
-from OCC.Display import qtDisplay
-'''
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
