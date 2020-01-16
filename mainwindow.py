@@ -95,11 +95,8 @@ from OCC.Display import qtDisplay
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
-'''
-TOL = 1e-7 # Linear Tolerance
-ATOL = TOL # Angular Tolerance
-print('TOLERANCE = ', TOL)
-'''
+
+
 class TreeView(QTreeWidget): # With 'drag & drop' ; context menu
     """ Display assembly structure. """
 
@@ -824,52 +821,51 @@ class MainWindow(QMainWindow):
     #
     #############################################
 
-    def distPtPt(self, initial=True):
-        if initial:
-            self.registerCallback(distPtPtC)
-            # Next 2 lines enable selecting intersection points on WP
-            self.canva._display.SetSelectionModeVertex()
-            self.canva._display.SetSelectionModeShape()
-            # User needs to switch to "Select Mode: Vertex" to pick vertices on parts
-            statusText = "Dist between 2 pts on WP. (Select Mode: Vertex for parts)"
-            self.statusBar().showMessage(statusText)
-        elif len(self.ptStack) == 2:
+    def distPtPt(self):
+        if len(self.ptStack) == 2:
             p2 = self.ptStack.pop()
             p1 = self.ptStack.pop()
             vec = gp_Vec(p1, p2)
             dist = vec.Magnitude()
             dist = dist / self.unitscale
             self.calculator.putx(dist)
+            self.distPtPt()
+        else:
+            self.registerCallback(self.distPtPtC)
+            # How to enable selecting intersection points on WP?
+            self.canva._display.SetSelectionModeVertex()
+            statusText = "Select 2 points to measure distance."
+            self.statusBar().showMessage(statusText)
             
-    def distPtPtC(self, shapeList, *kwargs):  # callback (collector) for distPtPt
-        print(shapeList)
-        print(kwargs)
+    def distPtPtC(self, shapeList, *args):  # callback (collector) for distPtPt
+        logger.debug('Edges selected: %s' % shapeList)
+        logger.debug(f'args: {args}')  # args = x, y mouse coords
         for shape in shapeList:
             vrtx = topods_Vertex(shape)
             gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
             self.ptStack.append(gpPt)
         if len(self.ptStack) == 2:
-            self.distPtPt(initial=False)
+            self.distPtPt()
         
-    def edgeLen(self, initial=True):
-        if initial:
-            self.registerCallback(self.edgeLenC)
-            self.canva._display.SetSelectionModeEdge()
-            statusText = "pick 2 points."
-            self.statusBar().showMessage(statusText)
-        elif self.edgeStack:
+    def edgeLen(self):
+        if self.edgeStack:
             edge = self.edgeStack.pop()
             edgelen = CPnts_AbscissaPoint_Length(BRepAdaptor_Curve(edge))
             edgelen = edgelen / self.unitscale
             self.calculator.putx(edgelen)
             self.redraw()
+            self.edgeLen()
+        else:
+            self.registerCallback(self.edgeLenC)
+            self.canva._display.SetSelectionModeEdge()
+            statusText = "Pick an edge to measure."
+            self.statusBar().showMessage(statusText)
             
-    def edgeLenC(self, shapeList, *kwargs):  # callback (collector) for edgeLen
-        print(shapeList)
-        print(kwargs)
+    def edgeLenC(self, shapeList, *args):  # callback (collector) for edgeLen
+        logger.debug('Edges selected: %s' % shapeList)
+        logger.debug(f'args: {args}')  # args = x, y mouse coords
         for shape in shapeList:
             edge = topods_Edge(shape)
             self.edgeStack.append(edge)
         if self.edgeStack:
-            self.edgeLen(initial=False)
-
+            self.edgeLen()
