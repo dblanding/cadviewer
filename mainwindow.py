@@ -98,7 +98,20 @@ logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
 
 class TreeView(QTreeWidget): # With 'drag & drop' ; context menu
-    """ Display assembly structure. """
+    """ Display assembly structure.
+
+    TO DO: This Part/Assy tree view GUI and the OCAF data model need to be
+    maintained in sync with each other. That's not happening right now.
+    While it is very slick (from the user's perspective) to be able to edit
+    the assembly structure using 'drag & drop' of parts and assemblies within
+    the QTreeWidget Part/Assy view, it's no simple task to keep the model in
+    sync. There are some moves that need to be prohibited, such as moving an
+    item into a child relationship with an item that is not an assembly.
+    Currently, 'drag and drop' changes in the GUI are not propagated to the
+    OCAF data model.
+    IDEA: As an alternative to 'drag & drop', consider adding an option to
+    the RMB pop-up to change the parent of a QTreeWidgetItem.
+    """
 
     def __init__(self, parent=None):
         QTreeWidget.__init__(self, parent)
@@ -571,10 +584,11 @@ class MainWindow(QMainWindow):
             context = self.canva._display.Context
             self.context = context
             print('initialized self.context')
-        context = self.context
+        else:
+            context = self.context
         if not self.registeredCallback:
             self.canva._display.SetSelectionModeNeutral()
-            context.SetAutoActivateSelection(False)
+            self.context.SetAutoActivateSelection(False)
         context.RemoveAll(True)
         for uid in self.drawList:
             if uid in self._partDict.keys():
@@ -661,7 +675,7 @@ class MainWindow(QMainWindow):
     #############################################
 
     def loadStep(self):
-        """Load a step file and bring it in as a treelib.Tree() structure.
+        """Bring in a step file as a 'disposable' treelib.Tree() structure.
 
         Each node of the tree contains the following tuple:
         (Name, UID, ParentUID, {Data})
@@ -678,13 +692,6 @@ class MainWindow(QMainWindow):
         Each QTreeWidgetItem is required to have a unique identifier. This means
         that multiple instances of the same CAD geometry will each have different
         uid's.
-
-        TO DO: The Part/Assy tree view GUI and the OCAF data model need to be
-        maintained in sync with each other. Right now, that's not happening.
-        The QTreeWidget Part/Assy tree view GUI makes it easy to 'drag & drop'
-        changes in assembly structure. Also, it's a convenient way to make
-        name changes of parts & assemblies. Those changes need to be propagated
-        to the OCAF data model.
         """
         prompt = 'Select STEP file to import'
         fnametuple = QFileDialog.getOpenFileName(None, prompt, './',

@@ -53,17 +53,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
 class StepImporter():
-    """
-    Read a step file with the goal of collecting a complete and accurate
-    Assembly/Part structure, including the names of parts and assemblies,
-    part color, and with all components shown in their correct positions.
-    Data stored in self.tree
+    """Read .stp file, and create a TDocStd_Document OCAF document.
+
+    Also, convert OCAF doc to a (disposable) treelib.Tree() structure.
     """
     def __init__(self, filename, nextUID=0):
 
         self.filename = filename
-        print(filename)
-        self.tree = treelib.tree.Tree()  # to hold assembly structure
+        self.tree = treelib.tree.Tree()  # 'disposable' ass'y structure
         self._currentUID = nextUID
         self.assyUidStack = [0]
         self.assyLocStack = []

@@ -121,13 +121,11 @@ TOL = 1e-7 # Linear Tolerance
 ATOL = TOL # Angular Tolerance
 print('TOLERANCE = ', TOL)
 
-
 #############################################
 #
 # Workplane creation functions...
 #
 #############################################
-
         
 def wpBy3Pts(*args):
     """

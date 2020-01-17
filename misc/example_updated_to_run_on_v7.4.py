@@ -33,7 +33,6 @@ def redraw(event=None):
     context.RemoveAll(True)
     context.SetAutoActivateSelection(False)
     aisShape = AIS_Shape(Box)
-    #h_aisShape = aisShape.GetHandle()
     context.Display(aisShape, True)
     context.SetTransparency(aisShape, .6, True)
     drawer = aisShape.DynamicHilightAttributes()
