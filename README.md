@@ -1,6 +1,10 @@
 # cadviewer
 Simple 3D CAD app using PythonOCC and PyQt5
 
+Jan 17, 2020: Got construction lines (on the toolbar) working.
+Also got fillet and shell working. Measure pt_to_pt distance and edge_length
+(on the calculator) are now working.
+
 Jan 16, 2020: Updated 'bottle demo' and added it to the menu bar,
 enabling step by step building of the OCC Classic Bottle.
 
@@ -42,13 +46,9 @@ pythonocc-0.16.3 is 4 years old, in the meantime code has changed because of :
 
 Here's my todo list, roughly in order of priority:
 
-	Port some of my old code form /misc to run on latest pyocc & Python3
+	Get Geometry lines (on toolbar) working to make wire profiles.
 
 	Adopt OCAF doc as tree model. Be able to save & load from file
-
-	Get toolbar buttons working.
-
-	Get 'Modify 3D' functions working
 
 	Clean up code with a linter.
 
