@@ -201,15 +201,7 @@ def makeWP():   # Default workplane located in X-Y plane at 0,0,0
 #
 #############################################
 
-def clineH(initial=True):   # Horizontal construction line
-    if initial:
-        win.registerCallback(clineHC)
-        display.SetSelectionModeVertex()
-        win.ptStack = []
-        win.lineEditStack = []
-        win.lineEdit.setFocus()
-        statusText = "Select point or enter Y-value for horizontal cline."
-        win.statusBar().showMessage(statusText)
+def clineH():   # Horizontal construction line
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
         if win.ptStack:
@@ -226,26 +218,26 @@ def clineH(initial=True):   # Horizontal construction line
         wp.hcl(p)
         win.ptStack = []
         win.redraw()
-        
-def clineHC(shapeList, *kwargs):  # callback (collector) for clineH
+    else:
+        win.registerCallback(clineHC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        win.lineEditStack = []
+        win.lineEdit.setFocus()
+        statusText = "Select point or enter Y-value for horizontal cline."
+        win.statusBar().showMessage(statusText)
+
+def clineHC(shapeList, *args):  # callback (collector) for clineH
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if (win.ptStack or win.lineEditStack):
-        clineH(initial=False)
+        clineH()
 
-def clineV(initial=True):   # Vertical construction line
-    if initial:
-        win.registerCallback(clineVC)
-        display.SetSelectionModeVertex()
-        win.ptStack = []
-        win.lineEditStack = []
-        win.lineEdit.setFocus()
-        statusText = "Select point or enter X-value for vertcal cline."
-        win.statusBar().showMessage(statusText)
+def clineV():   # Vertical construction line
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
         if win.ptStack:
@@ -262,26 +254,26 @@ def clineV(initial=True):   # Vertical construction line
         wp.vcl(p)
         win.ptStack = []
         win.redraw()
-        
-def clineVC(shapeList, *kwargs):  # callback (collector) for clineV
+    else:
+        win.registerCallback(clineVC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        win.lineEditStack = []
+        win.lineEdit.setFocus()
+        statusText = "Select point or enter X-value for vertcal cline."
+        win.statusBar().showMessage(statusText)
+
+def clineVC(shapeList, *args):  # callback (collector) for clineV
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if (win.ptStack or win.lineEditStack):
-        clineV(initial=False)
+        clineV()
 
-def clineHV(initial=True):   # Horizontal + Vertical construction lines
-    if initial:
-        win.registerCallback(clineHVC)
-        display.SetSelectionModeVertex()
-        win.ptStack = []
-        win.lineEditStack = []
-        win.lineEdit.setFocus()
-        statusText = "Select point or enter x,y coords for H+V cline."
-        win.statusBar().showMessage(statusText)
+def clineHV():   # Horizontal + Vertical construction lines
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
         if win.ptStack:
@@ -298,24 +290,26 @@ def clineHV(initial=True):   # Horizontal + Vertical construction lines
         wp.hvcl(p)
         win.ptStack = []
         win.redraw()
-        
-def clineHVC(shapeList, *kwargs):  # callback (collector) for clineHV
+    else:
+        win.registerCallback(clineHVC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        win.lineEditStack = []
+        win.lineEdit.setFocus()
+        statusText = "Select point or enter x,y coords for H+V cline."
+        win.statusBar().showMessage(statusText)
+
+def clineHVC(shapeList, *args):  # callback (collector) for clineHV
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if (win.ptStack or win.lineEditStack):
-        clineHV(initial=False)
+        clineHV()
 
-def cline2Pts(initial=True):
-    if initial:
-        win.registerCallback(cline2PtsC)
-        display.SetSelectionModeVertex()
-        win.ptStack = []
-        statusText = "Select 2 points for Construction Line."
-        win.statusBar().showMessage(statusText)
+def cline2Pts():
     if len(win.ptStack) == 2:
         wp = win.activeWp
         p2 = win.ptStack.pop()
@@ -329,28 +323,24 @@ def cline2Pts(initial=True):
         wp.acl(pnt1, pnt2)
         win.ptStack = []
         win.redraw()
-        
-def cline2PtsC(shapeList, *kwargs):  # callback (collector) for cline2Pts
+    else:
+        win.registerCallback(cline2PtsC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        statusText = "Select 2 points for Construction Line."
+        win.statusBar().showMessage(statusText)
+
+def cline2PtsC(shapeList, *args):  # callback (collector) for cline2Pts
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if len(win.ptStack) == 2:
-        cline2Pts(initial=False)
+        cline2Pts()
 
 def clineAng(initial=True):
-    if initial:
-        win.registerCallback(clineAngC)
-        display.SetSelectionModeVertex()
-        display.SetSelectionModeShape()
-        win.ptStack = []
-        win.floatStack = []
-        win.lineEditStack = []
-        win.lineEdit.setFocus()
-        statusText = "Select point on WP (or enter x,y coords) then enter angle."
-        win.statusBar().showMessage(statusText)
     if (win.ptStack and win.lineEditStack):
         wp = win.activeWp
         text = win.lineEditStack.pop()
@@ -375,10 +365,20 @@ def clineAng(initial=True):
             wp.acl(pnt, ang=angle)
             win.ptStack = []
             win.redraw()
+    else:
+        win.registerCallback(clineAngC)
+        display.SetSelectionModeVertex()
+        display.SetSelectionModeShape()
+        win.ptStack = []
+        win.floatStack = []
+        win.lineEditStack = []
+        win.lineEdit.setFocus()
+        statusText = "Select point on WP (or enter x,y coords) then enter angle."
+        win.statusBar().showMessage(statusText)
 
-def clineAngC(shapeList, *kwargs):  # callback (collector) for clineAng
+def clineAngC(shapeList, *args):  # callback (collector) for clineAng
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -386,18 +386,15 @@ def clineAngC(shapeList, *kwargs):  # callback (collector) for clineAng
     if (win.ptStack and win.lineEditStack):
         clineAng(initial=False)
     if len(win.lineEditStack) == 2:
-        clineAng(initial=False)
-    
+        clineAng()
+
 def clineRefAng():
     pass
 
-def clineAngBisec(initial=True):
+def clineAngBisec():
     pass
 
-def clineLinBisec(initial=True):
-    if initial:
-        win.registerCallback(clineLinBisecC)
-        display.SetSelectionModeVertex()
+def clineLinBisec():
     if len(win.ptStack) == 2:
         wp = win.activeWp
         p2 = win.ptStack.pop()
@@ -411,16 +408,19 @@ def clineLinBisec(initial=True):
         wp.lbcl(pnt1, pnt2)
         win.ptStack = []
         win.redraw()
-        
-def clineLinBisecC(shapeList, *kwargs):  # callback (collector) for clineLinBisec
+    else:
+        win.registerCallback(clineLinBisecC)
+        display.SetSelectionModeVertex()
+
+def clineLinBisecC(shapeList, *args):  # callback (collector) for clineLinBisec
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if len(win.ptStack) == 2:
-        clineLinBisec(initial=False)
+        clineLinBisec()
 
 def clinePara():
     pass
@@ -443,11 +443,7 @@ def ccirc():
 #
 #############################################
 
-def makeWireCircle(initial=True):
-    if initial:
-        win.registerCallback(makeWireCircleC)
-        display.SetSelectionModeVertex()
-        display.SetSelectionModeShape() #This allows selection of intersection points
+def makeWireCircle():
     if win.ptStack:
         wp = win.activeWp
         p1 = win.ptStack.pop()
@@ -457,16 +453,20 @@ def makeWireCircle(initial=True):
         win.activeWp.circ(pnt, 10)
         win.ptStack = []
         win.clearCallback()
+    else:
+        win.registerCallback(makeWireCircleC)
+        display.SetSelectionModeVertex()
+        display.SetSelectionModeShape() #This allows selection of intersection points
         
-def makeWireCircleC(shapeList, *kwargs):  # callback (collector) for makeWireCircle
+def makeWireCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
     print(shapeList)
-    print(kwargs)
+    print(args)
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if win.ptStack:
-        makeWireCircle(initial=False)
+        makeWireCircle()
 
 def geom():
     pass
@@ -512,14 +512,8 @@ def rotateAP():
 #
 #############################################
 
-def hole(initial=True):
-    if initial:
-        win.registerCallback(holeC)
-        display.SetSelectionModeVertex()
-        display.SetSelectionModeShape()
-        statusText = "Select location of hole then specify hole radius."
-        win.statusBar().showMessage(statusText)
-    elif (win.lineEditStack and win.ptStack):
+def hole():
+    if (win.lineEditStack and win.ptStack):
         text = win.lineEditStack.pop()
         holeR = float(text)
         pnt = win.ptStack.pop()
@@ -551,17 +545,23 @@ def hole(initial=True):
         win.statusBar().showMessage('Hole operation complete')
         win.clearCallback()
         win.redraw()
+    else:
+        win.registerCallback(holeC)
+        display.SetSelectionModeVertex()
+        display.SetSelectionModeShape()
+        statusText = "Select location of hole then specify hole radius."
+        win.statusBar().showMessage(statusText)
 
-def holeC(shapeList, *kwargs):  # callback (collector) for hole
+def holeC(shapeList, *args):  # callback (collector) for hole
     print(shapeList)
-    print(kwargs)
+    print(args)
     win.lineEdit.setFocus()
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
         win.ptStack.append(gpPt)
     if (win.ptStack and win.lineEditStack):
-        hole(initial=False)
+        hole()
 
 def fillet(event=None):
     if (win.lineEditStack and win.edgeStack):
