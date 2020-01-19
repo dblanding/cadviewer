@@ -1,6 +1,10 @@
 # cadviewer
 Simple 3D CAD app using PythonOCC and PyQt5
 
+Jan 19, 2020: I think the code is now working pretty much as it was when I
+stopped maintaining it back in 2016. I jotted a brief summary and posted a
+current screenshot at https://dblanding.github.io/cadviewer/
+
 Jan 17, 2020: Got construction lines (on the toolbar) working.
 Also got fillet and shell working. Measure pt_to_pt distance and edge_length
 (on the calculator) are now working.
@@ -43,6 +47,7 @@ pythonocc-0.16.3 is 4 years old, in the meantime code has changed because of :
 
 2. There is not Handle anymore. GetHandle and GetObject methods have disappeared. Just pass the object itself, the wrapper decides wether it has to pass the Handle or the Object to the C++ layer. You can check this commit (https://github.com/tpaviot/pythonocc-demos/commit/e59acdce5720d84ce76134789b48c268e36446d6#diff-68b70730ce65eb74e098809766ab3d0d), where we ported the old 'occ bottle example'.
 """
+
 
 Here's my todo list, roughly in order of priority:
 
