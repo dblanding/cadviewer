@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="Bluefish">
+<title>CADvas: Python CAD on Tk canvas</title>
+</head>
+<body>
+<p></p>
+<h1>CADViewer: A Simple CAD App written in Python 3, built on PythonOCC &amp; PyQt5</h1>
+<h4>1/19/2020</h4>
+<p>I just finished updating an old 3D CAD project of mine to run on the latest version of PythonOCC (version '7.4.0-rc1'), with Python 3.7 and PyQt5. The name 'CADViewer' for the&nbsp;<a href="https://sites.google.com/site/pythonocc/home" target="_blank" rel="noopener">old project</a>&nbsp;seemed appropriate mostly because that was the limit of its functionality. You could open a STEP file and display the 3D model and display its assembly structure, but that's about it. The code hadn't been touched since September, 2016. It ran on PythonOCC version '0.16.3' with Python 2.7 and PyQt4. I ended up needing to tweak a lot of things in order to get it running again, but&nbsp;<a href="https://github.com/dblanding/cadviewer" target="_blank" rel="noopener">here</a>&nbsp;it is, (functionally) as it was 3+ years ago.</p>
+<p>My goals in this project have remained roughly consistent. I'm scratching an itch to build a 3D CAD App that provides useful functionality and is also fun to use. In my work as a mechanical design engineer, my favorite CAD was SolidDesigner (3D) and me10 (2D), originally developed by HP, then spun off as CoCreate (and later purchased by PTC). I have borrowed rather heavily from my experience with SolidDesigner and have tried to mimic its functionality.</p>
+<p>Enjoy!</p>
+<h3>Here is a brief summary of some of the functionality of the app:</h3>
+<ul>
+<li>Able to load STEP files and display the 3D model and its associated assembly structure, complete with part and assembly names.</li>
+<li>Able to save the <b>active</b> part to a step file.</li>
+<li>The basic paradigm is to make a 2D using&nbsp;<b>Construction lines</b> and <b>Geometry lines</b>&nbsp;on the <b>active</b> workplane. The idea is that construction lines are used to first create a 'layout' and then geometry lines are added, after which the construction lines can be erased (or not). The Geometry lines are then converted to wire profiles which are used to create or modify 3D solids.</li>
+<li>There are no layers! Don't need them. They're a vestige of a bygone era of 2D CAD.</li>
+<li><b>Filleting</b> and <b>shelling</b> of parts.</li>
+<li>Step-by-step construction of the <b>classic OCC bottle</b> is included.</li>
+</ul>
+<h3>Screenshot:</h3>
+<p><img src="./images/cadapp.png" alt="screenshot" width="955" height="755" /></p>
+<h3>Author and Maintainer:</h3>
+<p>Doug Blanding</p>
+</body>
+</html>
+
