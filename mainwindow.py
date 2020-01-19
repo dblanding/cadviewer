@@ -180,6 +180,8 @@ class MainWindow(QMainWindow):
     def __init__(self, *args):
         super().__init__()
         self.canva = qtDisplay.qtViewer3d(self)
+        # Renaming self.canva._display (like below) doesn't work.
+        # self.display = self.canva._display
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
@@ -247,7 +249,6 @@ class MainWindow(QMainWindow):
         self.edgeStack = []  # storage stack for edge picks
         self.faceStack = []  # storage stack for face picks
         self.shapeStack = []  # storage stack for shape picks
-        self.context = None
         self.calculator = None
 
     def createDockWidget(self):
@@ -580,15 +581,10 @@ class MainWindow(QMainWindow):
         self.syncCheckedToDrawList()
     
     def redraw(self):
-        if not self.context:
-            context = self.canva._display.Context
-            self.context = context
-            print('initialized self.context')
-        else:
-            context = self.context
+        context = self.canva._display.Context
         if not self.registeredCallback:
             self.canva._display.SetSelectionModeNeutral()
-            self.context.SetAutoActivateSelection(False)
+            context.SetAutoActivateSelection(False)
         context.RemoveAll(True)
         for uid in self.drawList:
             if uid in self._partDict.keys():
