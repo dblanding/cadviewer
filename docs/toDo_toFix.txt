@@ -1,0 +1,27 @@
+To Do: (new features or functions)
+----------------------------------
+Use OCAF format to represent Assy/Part model data.
+  Save as an OCC.Core.TDocStd.TDocStd_Document document.
+  Save any assembly in step format.
+  Save Assy/Part model (TStd_Doc document) to file.
+  Keep Assy/Part model in sync with Assy/Part view.
+
+Modifiable parameters using treeWidgetItems:
+  - Draw / Hide
+  - Change Name
+  - Change Owner
+  - Change Color
+
+Project face or edge onto active WP
+Delete 2D
+Delete 3D
+View by current WP & Fit
+RMB pop-up over graphics window:
+  - Add indicator of current select mode
+
+
+To Fix: (stuff that's there but not working)
+----------------------------------
+Get 2D Geom working (see: core_geomeetry_curves_2d_from_curve.py, OCC bottle)
+snapping to intersection points on WP seems flaky
+FitAll zooms out to infinity for WP's
