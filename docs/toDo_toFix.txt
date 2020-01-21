@@ -22,6 +22,6 @@ RMB pop-up over graphics window:
 
 To Fix: (stuff that's there but not working)
 ----------------------------------
-Get 2D Geom working (see: core_geomeetry_curves_2d_from_curve.py, OCC bottle)
+Get 2D Geom working (see: core_geometry_curves_2d_from_curve.py, OCC bottle)
 snapping to intersection points on WP seems flaky
 FitAll zooms out to infinity for WP's

@@ -4,6 +4,7 @@ from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
                                      BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
 from OCC.Core.GCE2d import GCE2d_MakeSegment
+from OCC.Core.Geom2d import Geom2d_Circle
 from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve
 from OCC.Core.GeomAPI import geomapi_To3d
 from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt,
@@ -524,6 +525,49 @@ class WorkPlane(object):
         if constr:
             self.ccircList.append(geomCirc)
         else:
-            edge = BRepBuilderAPI_MakeEdge(Geom_Curve(geomCirc))
+            edge = BRepBuilderAPI_MakeEdge(Geom_Circle(geomCirc))
             self.wire = BRepBuilderAPI_MakeWire(edge.Edge()).Wire()
             self.wireList.append(self.wire)
+
+    def circ2(self, cntr, rad, constr=False):
+        """Create a circle """
+        cx, cy = cntr
+        cntrPt = gp_Pnt2d(cx, cy)
+        ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
+        #geom2dCirc = 
+        aCirc = GCE2d_MakeCircle(ax2, rad)
+        aCirc.Transform(self.Trsf)
+        if constr:
+            self.ccircList.append(aCirc)
+        else:
+            acircle = geomapi_To3d(Geom_Curve(aCirc), self.gpPlane) # type: Handle_Geom_Curve
+            edge = BRepBuilderAPI_MakeEdge(geomCirc.Value(), self.gpPlane)
+            self.wire = BRepBuilderAPI_MakeWire(edge.Edge()).Wire()
+            self.wireList.append(self.wire)
+
+    def rect(self, pnt1, pnt2):
+        """Create a rectangle from two diagonally opposite corners."""
+        print(f"Pnt1: {pnt1}")
+        print(f"Pnt2: {pnt2}")
+        # 2 diagonally opposite corners
+        x1, y1 = pnt1
+        x2, y2 = pnt2
+        # 4 corners of rectangle 
+        p1 = gp_Pnt2d(x1, y1)
+        p2 = gp_Pnt2d(x2, y1)
+        p3 = gp_Pnt2d(x2, y2)
+        p4 = gp_Pnt2d(x1, y2)
+        # 4 sides (segments) of rectangle
+        seg1 = GCE2d_MakeSegment(p1, p2)
+        seg2 = GCE2d_MakeSegment(p2, p3)
+        seg3 = GCE2d_MakeSegment(p3, p4)
+        seg4 = GCE2d_MakeSegment(p4, p1)
+        # convert each 2d line segment to a 3d line
+        e1 = BRepBuilderAPI_MakeEdge(seg1.Value(), self.plane)
+        e2 = BRepBuilderAPI_MakeEdge(seg2.Value(), self.plane)
+        e3 = BRepBuilderAPI_MakeEdge(seg3.Value(), self.plane)
+        e4 = BRepBuilderAPI_MakeEdge(seg4.Value(), self.plane)
+        aWire = BRepBuilderAPI_MakeWire(e1.Edge(), e2.Edge(), e3.Edge(), e4.Edge())
+        self.wire = aWire.Wire()  # TopoDS_Wire
+        self.wireList.append(self.wire)
+        print(f"Wires in self.wireList: {len(self.wireList)}")

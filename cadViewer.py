@@ -36,15 +36,6 @@ import treelib
 import workplane
 import bottle
 from mainwindow import MainWindow, TreeView
-"""
-from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
-from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
-                             QMenu, QDockWidget, QDesktopWidget, QToolButton,
-                             QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
-                             QToolBar, QFileDialog, QAbstractItemView,
-                             QInputDialog, QTreeWidgetItemIterator)
-"""
 from PyQt5.QtWidgets import QApplication, QMenu
 from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
 from OCC.Core.AIS import AIS_Shape
@@ -437,6 +428,38 @@ def clineTan2():
 def ccirc():
     pass
 
+def rect():
+    if len(win.ptStack) == 2:
+        wp = win.activeWp
+        p2 = win.ptStack.pop()
+        p1 = win.ptStack.pop()
+        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
+        p1.Transform(trsf)
+        p2.Transform(trsf)
+        # 2d points
+        pnt1 = (p1.X(), p1.Y())
+        pnt2 = (p2.X(), p2.Y())
+        wp.rect(pnt1, pnt2)
+        win.ptStack = []
+        win.redraw()
+    else:
+        win.registerCallback(rectC)
+        win.canva._display.SetSelectionModeVertex()
+        win.ptStack = []
+        statusText = "Select 2 points for Rectangle."
+        win.statusBar().showMessage(statusText)
+
+def rectC(shapeList, *args):  # callback (collector) for rect
+    print(shapeList)
+    print(args)
+    win.canva._display.SetSelectionModeVertex()
+    for shape in shapeList:
+        vrtx = topods_Vertex(shape)
+        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+        win.ptStack.append(gpPt)
+    if len(win.ptStack) == 2:
+        rect()
+
 #############################################
 #
 # 2d Geometry Line functions...
@@ -456,7 +479,7 @@ def makeWireCircle():
     else:
         win.registerCallback(makeWireCircleC)
         display.SetSelectionModeVertex()
-        display.SetSelectionModeShape() #This allows selection of intersection points
+        #display.SetSelectionModeShape() #This allows selection of intersection points
         
 def makeWireCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
     print(shapeList)
@@ -876,7 +899,7 @@ if __name__ == '__main__':
     win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
     win.wpToolBar.addSeparator()
     win.wpToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', geom)
