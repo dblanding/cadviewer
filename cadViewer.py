@@ -71,8 +71,11 @@ from OCC.Core.TDataStd import TDataStd_Name
 from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
 from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
 from OCC.Core.TopExp import TopExp_Explorer
-from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
-                             topods_Vertex)
+from OCC.Core.TopoDS import (topods, TopoDS_Wire, TopoDS_Vertex, TopoDS_Edge,
+                             TopoDS_Face, TopoDS_Shell, TopoDS_Solid,
+                             TopoDS_Compound, TopoDS_CompSolid, topods_Edge,
+                             topods_Face, topods_Shell, topods_Vertex,
+                             TopoDS_Iterator)
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopTools import TopTools_ListOfShape
 from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
@@ -294,9 +297,18 @@ def clineHVC(shapeList, *args):  # callback (collector) for clineHV
     print(shapeList)
     print(args)
     for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+        # Next test was added to prevent program from crashing as a result
+        # of unwanted face selections while using LMB to rotate display.
+        # Apparently, a registered callback function will get sent various
+        # events and selections in addition to the ones it wants.
+        # To Do: Make sure I understand how this works so it doesn't bite
+        # me elsewhere.
+        if isinstance(shape, TopoDS_Vertex):
+            vrtx = topods_Vertex(shape)
+            gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+            win.ptStack.append(gpPt)
+        else:
+            print(f"Shape is a type: {type(shape)}")
     if (win.ptStack or win.lineEditStack):
         clineHV()
 
@@ -473,7 +485,7 @@ def makeWireCircle():
         trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
         p1.Transform(trsf)
         pnt = (p1.X(), p1.Y())  # 2d point
-        win.activeWp.circ(pnt, 10)
+        win.activeWp.circ(pnt, 20)
         win.ptStack = []
         win.clearCallback()
     else:
