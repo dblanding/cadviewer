@@ -1,13 +1,15 @@
 import math
+from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
                                      BRepBuilderAPI_MakeFace,
                                      BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
+from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
 from OCC.Core.GCE2d import GCE2d_MakeSegment
 from OCC.Core.Geom2d import Geom2d_Circle
-from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve
+from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve, Geom_Line
 from OCC.Core.GeomAPI import geomapi_To3d
-from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt,
+from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Lin, gp_Pnt,
                          gp_Pnt2d, gp_Pln, gp_Trsf)
 from OCC.Core.GProp import GProp_GProps
 from OCC.Core.TopAbs import TopAbs_REVERSED
@@ -445,12 +447,12 @@ class WorkPlane(object):
         trimbox = (-self.size, self.size, self.size, -self.size)
         endpts = cline_box_intrsctn(cline, trimbox)
         if len(endpts) == 2:
-            ep1, ep2 = endpts
-            aPnt1 = gp_Pnt2d(ep1[0], ep1[1])
-            aPnt2 = gp_Pnt2d(ep2[0], ep2[1])
-            aSegment = GCE2d_MakeSegment(aPnt1, aPnt2).Value() #type: Handle_Geom2d_TrimmedCurve
-            # convert 2d line segment to 3d line
-            aLine = geomapi_To3d(aSegment, self.gpPlane) # type: Handle_Geom_Curve
+            ep1, ep2 = endpts  # 2d points
+            aPnt1 = gp_Pnt(ep1[0], ep1[1], 0)  # 3d point in XY plane
+            tPnt1 = aPnt1.Transformed(self.Trsf)  # point in UV plane of WP
+            aPnt2 = gp_Pnt(ep2[0], ep2[1], 0)  # 3d point in XY plane
+            tPnt2 = aPnt2.Transformed(self.Trsf)  # point in UV plane of WP
+            aLine = GC_MakeSegment(tPnt1, tPnt2).Value()  # type: Geom_TrimmedCurve
             self.clineList.append(aLine)
 
     def hcl(self, pnt=None):

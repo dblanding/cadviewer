@@ -241,12 +241,14 @@ def makePoints():
     aPnt3 = gp_Pnt(0 , -thickness / 2. , 0)
     aPnt4 = gp_Pnt(width / 2. , -thickness / 4. , 0)
     aPnt5 = gp_Pnt(width / 2. , 0 , 0)
+    # points aren't visible on screen
+    # make vertices in order to see them
     V1 = BRepBuilderAPI_MakeVertex(aPnt1)
     V2 = BRepBuilderAPI_MakeVertex(aPnt2)
     V3 = BRepBuilderAPI_MakeVertex(aPnt3)
     V4 = BRepBuilderAPI_MakeVertex(aPnt4)
     V5 = BRepBuilderAPI_MakeVertex(aPnt5)
-    # add dummy point above bottle just to set view size
+    # add dummy vertex above bottle just to set view size
     V6 = BRepBuilderAPI_MakeVertex(gp_Pnt(0,0,height*1.1))
     return (V1, V2, V3, V4, V5, V6)
 

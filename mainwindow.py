@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
                              QInputDialog, QTreeWidgetItemIterator)
-from OCC.Core.AIS import AIS_Shape
+from OCC.Core.AIS import AIS_Shape, AIS_Line
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
@@ -65,7 +65,7 @@ from OCC.Core.IFSelect import IFSelect_RetDone
 from OCC.Core.IntAna import IntAna_IntConicQuad
 from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.Precision import precision_Angular, precision_Confusion
-from OCC.Core.Prs3d import Prs3d_Drawer
+from OCC.Core.Prs3d import Prs3d_Drawer, Prs3d_LineAspect
 from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
 from OCC.Core.TCollection import (TCollection_ExtendedString,
@@ -617,8 +617,8 @@ class MainWindow(QMainWindow):
                 # Set shape transparency, a float from 0.0 to 1.0
                 transp = 0.8
                 context.SetTransparency(aisShape, transp, True)
-                drawer = aisShape.DynamicHilightAttributes()
-                context.HilightWithColor(aisShape, drawer, True)
+                #drawer = aisShape.DynamicHilightAttributes()
+                #context.HilightWithColor(aisShape, drawer, True)
                 clClr = OCC.Display.OCCViewer.rgb_color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline, color=clClr)
