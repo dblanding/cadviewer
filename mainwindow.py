@@ -584,14 +584,14 @@ class MainWindow(QMainWindow):
         context = self.canva._display.Context
         if not self.registeredCallback:
             self.canva._display.SetSelectionModeNeutral()
-            context.SetAutoActivateSelection(False)
+            context.SetAutoActivateSelection(True)
         context.RemoveAll(True)
         for uid in self.drawList:
             if uid in self._partDict.keys():
                 if uid in self._transparencyDict.keys():
                     transp = self._transparencyDict[uid]
                 else:
-                    transp = 0
+                    transp = 0.0
                 color = self._colorDict[uid]
                 aisShape = AIS_Shape(self._partDict[uid])
                 context.Display(aisShape, True)
@@ -611,14 +611,13 @@ class MainWindow(QMainWindow):
                     borderColor = Quantity_Color(Quantity_NOC_DARKGREEN)
                 else:
                     borderColor = Quantity_Color(Quantity_NOC_GRAY)
-                aisShape = AIS_Shape(border)
-                context.Display(aisShape, True)
-                context.SetColor(aisShape, borderColor, True)
-                # Set shape transparency, a float from 0.0 to 1.0
-                transp = 0.8
-                context.SetTransparency(aisShape, transp, True)
-                #drawer = aisShape.DynamicHilightAttributes()
-                #context.HilightWithColor(aisShape, drawer, True)
+                aisBorder = AIS_Shape(border)
+                context.Display(aisBorder, True)
+                context.SetColor(aisBorder, borderColor, True)
+                transp = 0.8  # 0.0 <= transparency <= 1.0
+                context.SetTransparency(aisBorder, transp, True)
+                drawer = aisBorder.DynamicHilightAttributes()
+                context.HilightWithColor(aisBorder, drawer, True)
                 clClr = OCC.Display.OCCViewer.rgb_color(1,0,1)
                 for cline in wp.clineList:
                     self.canva._display.DisplayShape(cline, color=clClr)
