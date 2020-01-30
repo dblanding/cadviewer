@@ -9,7 +9,7 @@ from OCC.Core.GCE2d import GCE2d_MakeSegment
 from OCC.Core.Geom2d import Geom2d_Circle
 from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve, Geom_Line
 from OCC.Core.GeomAPI import geomapi_To3d
-from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Lin, gp_Pnt,
+from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Lin, gp_Lin2d, gp_Pnt,
                          gp_Pnt2d, gp_Pln, gp_Trsf)
 from OCC.Core.GProp import GProp_GProps
 from OCC.Core.TopAbs import TopAbs_REVERSED
@@ -337,6 +337,17 @@ def rotate_pt(pt, ang, ctr):
     v = y * math.cos(A) + x * math.sin(A)
     return add_pt((u, v), ctr)
 
+def geomLineBldr(cline, t):
+    """Return Geom_Line from cline and transform of 2d workplane."""
+
+    a, b, c = cline
+    gpLin2d = gp_Lin2d(a, b, c)
+    gpDir2d = gpLin2d.Direction()
+    gpPnt2d = gpLin2d.Location()
+    gpDir = gp_Dir(gpDir2d.X(), gpDir2d.Y(), 0).Transformed(t)
+    gpPnt = gp_Pnt(gpPnt2d.X(), gpPnt2d.Y(), 0).Transformed(t)
+    return Geom_Line(gpPnt, gpDir)
+
 #===========================================================================
 
 class WorkPlane(object):
@@ -395,8 +406,8 @@ class WorkPlane(object):
         self.face = face
         self.size = size
         self.border = self.makeWpBorder(self.size)
-        self.clList = [] # List of 'native' construction lines
-        self.clineList = [] # List of pyOCC construction lines
+        self.clList = [] # List of c-lines (native type w/ a,b,c coefs)
+        self.clineList = [] # List of c-lines (type: Geom_Line)
         self.ccircList = [] # List of pyOCC construction circles
         self.wireList = [] # List of pyOCC wires
         self.wire = None
@@ -433,27 +444,20 @@ class WorkPlane(object):
     # Construction
     # construction lines (clines) are "infinite" length lines
     # described by the equation:            ax + by + c = 0
-    # they are defined by coefficients:     (a, b, c)
+    # defined by coefficients (mm):         (a, b, c)
     #
     # circles are defined by coordinates:   (pc, r)
     # points are defined by coordinates:    (x, y)
     #=======================================================================
 
     def cline_gen(self, cline):
-        '''Generate a cline extending to the edge of the border.
-        cline coords (a,b,c) are in (mm) values.'''
+        '''Generate a Geom_Line (used for display) for each cline.
+
+        All clines are stored in self.clList.
+        All geomLines are stored in self.clineList'''
+        geomLine = geomLineBldr(cline, self.Trsf)
         self.clList.append(cline)
-        # TopLft & BotRgt corners of the border
-        trimbox = (-self.size, self.size, self.size, -self.size)
-        endpts = cline_box_intrsctn(cline, trimbox)
-        if len(endpts) == 2:
-            ep1, ep2 = endpts  # 2d points
-            aPnt1 = gp_Pnt(ep1[0], ep1[1], 0)  # 3d point in XY plane
-            tPnt1 = aPnt1.Transformed(self.Trsf)  # point in UV plane of WP
-            aPnt2 = gp_Pnt(ep2[0], ep2[1], 0)  # 3d point in XY plane
-            tPnt2 = aPnt2.Transformed(self.Trsf)  # point in UV plane of WP
-            aLine = GC_MakeSegment(tPnt1, tPnt2).Value()  # type: Geom_TrimmedCurve
-            self.clineList.append(aLine)
+        self.clineList.append(geomLine)
 
     def hcl(self, pnt=None):
         """Create horizontal construction line from a point (x,y)."""

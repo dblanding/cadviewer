@@ -66,6 +66,9 @@ from OCC.Core.IntAna import IntAna_IntConicQuad
 from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.Precision import precision_Angular, precision_Confusion
 from OCC.Core.Prs3d import Prs3d_Drawer, Prs3d_LineAspect
+from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
+                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
+                               Quantity_NOC_DARKGREEN, Quantity_NOC_MAGENTA1)
 from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
 from OCC.Core.TCollection import (TCollection_ExtendedString,
@@ -76,9 +79,6 @@ from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
                              topods_Vertex)
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopTools import TopTools_ListOfShape
-from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
-                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
-                               Quantity_NOC_DARKGREEN)
 from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
@@ -618,10 +618,18 @@ class MainWindow(QMainWindow):
                 context.SetTransparency(aisBorder, transp, True)
                 drawer = aisBorder.DynamicHilightAttributes()
                 context.HilightWithColor(aisBorder, drawer, True)
-                clClr = OCC.Display.OCCViewer.rgb_color(1,0,1)
+                clClr = Quantity_Color(Quantity_NOC_MAGENTA1)
                 for cline in wp.clineList:
-                    self.canva._display.DisplayShape(cline, color=clClr)
-                for point in wp.intersectPts():
+                    aisline = AIS_Line(cline)
+                    drawer = aisline.Attributes()
+                    # asp parameters: (color, type, width)
+                    asp = Prs3d_LineAspect(clClr, 2, 1.0)
+                    drawer.SetLineAspect(asp)
+                    aisline.SetAttributes(drawer)
+                    context.Display(aisline, False)
+                pntlist = wp.intersectPts()
+                print(len(pntlist))
+                for point in pntlist:
                     self.canva._display.DisplayShape(point)
                 for ccirc in wp.ccircList:
                     self.canva._display.DisplayShape(ccirc, color=clClr)
