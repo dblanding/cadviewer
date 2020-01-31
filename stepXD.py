@@ -1,16 +1,10 @@
+#!/usr/bin/env python
+#
 # Copyright 2020 Doug Blanding (dblanding@gmail.com)
 #
 # This file is part of cadViewer.
-#
-# This module provides classes to read and write eXtended Data to and
-# from step files, enabling the saving and loading (in STEP format)
-# of a top assembly with its heirarchical structure (including all its
-# component parts and subassemblies) with their names & colors.
-#
 # The latest  version of this file can be found at:
 # //https://github.com/dblanding/cadviewer
-#
-# Author: Doug Blanding   <dblanding at gmail dot com>
 #
 # cadViewer is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +20,7 @@
 # if not, write to the Free Software Foundation, Inc.
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+
 
 import logging
 import os.path

@@ -1,24 +1,21 @@
 #!/usr/bin/env python
 #
-# This file is part of cadViewer, 
-# An embryonic python 3D CAD application with very little functionality.
-# Perhaps it could be a starting point for a more elaborate program.
-# It may be only useful to facilitate the exploration of pythonOCC syntax.
-# The latest  version of this file can be found at:
-# https://github.com/dblanding/cadviewer
+# Adapted from 'Classic OCC Bootle Demo'
 #
-# Author: Doug Blanding   <dblanding at gmail dot com>
+# This file is part of cadViewer.
+# The latest  version of this file can be found at:
+# //https://github.com/dblanding/cadviewer
 #
 # cadViewer is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # cadViewer is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # if not, write to the Free Software Foundation, Inc.
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

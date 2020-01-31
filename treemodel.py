@@ -1,11 +1,10 @@
+#!/usr/bin/env python
+#
 # Copyright 2020 Doug Blanding (dblanding@gmail.com)
 #
 # This file is part of cadViewer.
-#
 # The latest  version of this file can be found at:
 # //https://github.com/dblanding/cadviewer
-#
-# Author: Doug Blanding   <dblanding at gmail dot com>
 #
 # cadViewer is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
