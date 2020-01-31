@@ -88,7 +88,9 @@ from OCC import VERSION
 print("OCC version: %s" % VERSION)
 
 used_backend = OCC.Display.backend.load_backend()
-from OCC.Display import qtDisplay
+# from OCC.Display import qtDisplay
+# import local version instead (allows changing rotate/pan/zoom controls)
+import myDisplay.qtDisplay as qtDisplay
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
