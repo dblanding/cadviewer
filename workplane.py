@@ -435,7 +435,7 @@ class WorkPlane(object):
         self.clList = [] # List of c-lines (native type w/ a,b,c coefs)
         self.clineList = [] # List of c-lines (type: Geom_Line)
         self.ccircList = [] # List of pyOCC construction circles
-        self.wireList = [] # List of pyOCC wires
+        self.edgeList = [] # List of TopoDS_Edges
         self.wire = None
         self.hvcl((0,0))    # Make H-V clines through origin
         self.accuracy = 0.001   # min distance between two points
@@ -551,9 +551,9 @@ class WorkPlane(object):
     #=======================================================================
     # Profile Geometry
     # Profile lines are type 'TopoDS_Edge' lines and circles.
-    # They get 'collected' into a closed loop which is then converted to a
-    # wire (type 'TopoDS_Wire'), which can then be used to create a face or
-    # extrude or cut a solid body.
+    # They will eventually get 'collected' into a closed loop which is then
+    # converted to a wire (type 'TopoDS_Wire'), which can then be used to
+    # create a face or extrude or cut a solid body.
     #=======================================================================
 
 
@@ -567,9 +567,8 @@ class WorkPlane(object):
         if constr:
             self.ccircList.append(geomCirc)
         else:
-            edge = BRepBuilderAPI_MakeEdge(geomCirc)
-            self.wire = BRepBuilderAPI_MakeWire(edge.Edge()).Wire()
-            self.wireList.append(self.wire)
+            edge = BRepBuilderAPI_MakeEdge(geomCirc).Edge()
+            self.edgeList.append(self.edge)
 
     def circ2(self, cntr, rad, constr=False):
         """Create a circle """
@@ -607,7 +606,6 @@ class WorkPlane(object):
         e2 = BRepBuilderAPI_MakeEdge(seg2).Edge()
         e3 = BRepBuilderAPI_MakeEdge(seg3).Edge()
         e4 = BRepBuilderAPI_MakeEdge(seg4).Edge()
-        aWire_mkr = BRepBuilderAPI_MakeWire(e1, e2, e3, e4)
-        self.wire = aWire_mkr.Wire()  # TopoDS_Wire
-        self.wireList.append(self.wire)
-        print(f"Wires in self.wireList: {len(self.wireList)}")
+        edges = (e1, e2, e3, e4)
+        for edge in edges:
+            self.edgeList.append(edge)

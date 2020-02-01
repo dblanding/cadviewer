@@ -243,8 +243,9 @@ class MainWindow(QMainWindow):
         self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
         self.treeView.expandItem(self.treeViewRoot)
         self.itemClicked = None   # TreeView item that has been mouse clicked
+        self.flag = False  # Normally False; for use as needed by other functions
         self.floatStack = []  # storage stack for floating point values
-        self.ptStack = []  # storage stack for point picks
+        self.ptStack = []  # storage stack for point picks: type 'gp_Pnt'
         self.edgeStack = []  # storage stack for edge picks
         self.faceStack = []  # storage stack for face picks
         self.shapeStack = []  # storage stack for shape picks
@@ -536,7 +537,7 @@ class MainWindow(QMainWindow):
         else:
             print(value)
 
-    def clearStack(self):
+    def clearLEStack(self):
         self.lineEditStack = []
 
     def clearAllStacks(self):
@@ -627,13 +628,12 @@ class MainWindow(QMainWindow):
                     aisline.SetAttributes(drawer)
                     context.Display(aisline, False)
                 pntlist = wp.intersectPts()
-                print(len(pntlist))
                 for point in pntlist:
                     self.canva._display.DisplayShape(point)
                 for ccirc in wp.ccircList:
                     self.canva._display.DisplayShape(ccirc, color=clClr)
-                for wire in wp.wireList:
-                    self.canva._display.DisplayShape(wire, color="WHITE")
+                for edge in wp.edgeList:
+                    self.canva._display.DisplayShape(edge, color="WHITE")
                 self.canva._display.Repaint()
 
     def drawAll(self):

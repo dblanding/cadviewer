@@ -130,10 +130,7 @@ def wpBy3Pts(*args):
         
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     print(f'args = {args}')
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if (len(win.ptStack) == 1):
         statusText = "Now select point 2 (wp origin)."
         win.statusBar().showMessage(statusText)
@@ -199,8 +196,6 @@ def add_vertex_to_ptStack(shapeList):
         # of unwanted face selections while using LMB to rotate display.
         # Apparently, a registered callback function will get sent various
         # events and selections in addition to the ones it wants.
-        # To Do: Make sure I understand how this works so it doesn't bite
-        # me elsewhere.
         if isinstance(shape, TopoDS_Vertex):
             vrtx = topods_Vertex(shape)
             gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -208,29 +203,57 @@ def add_vertex_to_ptStack(shapeList):
         else:
             print(f"(Unwanted) shape type: {type(shape)}")
 
+def get_float_value_from_lineEditStack():
+    """Helper function for various toolbar functions"""
+    text = win.lineEditStack.pop()
+    try:
+        value = float(text) * win.unitscale
+    except ValueError:
+        print("Value entered must be a valid floating point number.")
+        win.clearCallback()
+        return None
+    return value
+
+def get_point_from_lineEditStack():
+    """Helper function for various toolbar functions"""
+    try:
+        strx, stry = win.lineEditStack.pop().split(',')
+        x = float(strx) * win.unitscale
+        y = float(stry) * win.unitscale
+        pt2d = (x,y)  # 2d point
+    except ValueError:
+        print("Value entered must be two numbers separated by a comma.")
+        win.clearCallback()
+        return None
+    return pt2d
+
+def get_point_from_ptStack():
+    """Helper function for various toolbar functions"""
+    wp = win.activeWp
+    pnt = win.ptStack.pop()
+    trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
+    pnt.Transform(trsf)
+    pt2d = (pnt.X(), pnt.Y())  # 2d point
+    return pt2d
 
 def clineH():   # Horizontal construction line
-    if (win.lineEditStack or win.ptStack):
+    if (win.ptStack or win.lineEditStack):
         wp = win.activeWp
         if win.ptStack:
-            pnt = win.ptStack.pop()
-            trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-            pnt.Transform(trsf)
-            # 2d point
-            p = (pnt.X(), pnt.Y())
+            p = get_point_from_ptStack()
         else:
-            text = win.lineEditStack.pop()
             x = 0
-            y = float(text) * win.unitscale
+            y = get_float_value_from_lineEditStack()
+            if y is None:
+                return
             p = (x,y)
         wp.hcl(p)
-        win.ptStack = []
         win.redraw()
     else:
         win.registerCallback(clineHC)
         display.SetSelectionModeVertex()
         win.ptStack = []
-        win.lineEditStack = []
+        win.clearLEStack()
         win.lineEdit.setFocus()
         statusText = "Select point or enter Y-value for horizontal cline."
         win.statusBar().showMessage(statusText)
@@ -244,24 +267,20 @@ def clineV():   # Vertical construction line
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
         if win.ptStack:
-            pnt = win.ptStack.pop()
-            trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-            pnt.Transform(trsf)
-            # 2d point
-            p = (pnt.X(), pnt.Y())
+            p = get_point_from_ptStack()
         else:
-            text = win.lineEditStack.pop()
-            x = float(text) * win.unitscale
+            x = get_float_value_from_lineEditStack()
+            if x is None:
+                return
             y = 0
             p = (x,y)
         wp.vcl(p)
-        win.ptStack = []
         win.redraw()
     else:
         win.registerCallback(clineVC)
         display.SetSelectionModeVertex()
         win.ptStack = []
-        win.lineEditStack = []
+        win.clearLEStack()
         win.lineEdit.setFocus()
         statusText = "Select point or enter X-value for vertcal cline."
         win.statusBar().showMessage(statusText)
@@ -275,16 +294,11 @@ def clineHV():   # Horizontal + Vertical construction lines
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
         if win.ptStack:
-            pnt = win.ptStack.pop()
-            trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-            pnt.Transform(trsf)
-            # 2d point
-            p = (pnt.X(), pnt.Y())
+            p = get_point_from_ptStack()
         else:
-            strx, stry = win.lineEditStack.pop().split(',')
-            x = float(strx) * win.unitscale
-            y = float(stry) * win.unitscale
-            p = (x,y)
+            p = get_point_from_lineEditStack()
+            if p is None:
+                return
         wp.hvcl(p)
         win.ptStack = []
         win.redraw()
@@ -292,7 +306,7 @@ def clineHV():   # Horizontal + Vertical construction lines
         win.registerCallback(clineHVC)
         display.SetSelectionModeVertex()
         win.ptStack = []
-        win.lineEditStack = []
+        win.clearLEStack()
         win.lineEdit.setFocus()
         statusText = "Select point or enter x,y coords for H+V cline."
         win.statusBar().showMessage(statusText)
@@ -305,15 +319,9 @@ def clineHVC(shapeList, *args):  # callback (collector) for clineHV
 def cline2Pts():
     if len(win.ptStack) == 2:
         wp = win.activeWp
-        p2 = win.ptStack.pop()
-        p1 = win.ptStack.pop()
-        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-        p1.Transform(trsf)
-        p2.Transform(trsf)
-        # 2d points
-        pnt1 = (p1.X(), p1.Y())
-        pnt2 = (p2.X(), p2.Y())
-        wp.acl(pnt1, pnt2)
+        p2 = get_point_from_ptStack()
+        p1 = get_point_from_ptStack()
+        wp.acl(p1, p2)
         win.ptStack = []
         win.redraw()
     else:
@@ -328,15 +336,12 @@ def cline2PtsC(shapeList, *args):  # callback (collector) for cline2Pts
     if len(win.ptStack) == 2:
         cline2Pts()
 
-def clineAng(initial=True):
+def clineAng():
     if (win.ptStack and win.lineEditStack):
         wp = win.activeWp
         text = win.lineEditStack.pop()
         angle = float(text)
-        p = win.ptStack.pop()
-        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-        p.Transform(trsf)
-        pnt = (p.X(), p.Y()) # 2D point
+        pnt = get_point_from_ptStack()
         wp.acl(pnt, ang=angle)
         win.ptStack = []
         win.redraw()
@@ -344,19 +349,15 @@ def clineAng(initial=True):
         wp = win.activeWp
         angtext = win.lineEditStack.pop()
         angle = float(angtext)
-        pnttext = win.lineEditStack.pop()
-        if ',' in pnttext:
-            strx, stry = pnttext.split(',')
-            x = float(strx) * win.unitscale
-            y = float(stry) * win.unitscale
-            pnt = (x,y)
-            wp.acl(pnt, ang=angle)
-            win.ptStack = []
-            win.redraw()
+        pnt = get_point_from_lineEditStack()
+        if pnt is None:
+            return
+        wp.acl(pnt, ang=angle)
+        win.ptStack = []
+        win.redraw()
     else:
         win.registerCallback(clineAngC)
         display.SetSelectionModeVertex()
-        display.SetSelectionModeShape()
         win.ptStack = []
         win.floatStack = []
         win.lineEditStack = []
@@ -366,8 +367,9 @@ def clineAng(initial=True):
 
 def clineAngC(shapeList, *args):  # callback (collector) for clineAng
     add_vertex_to_ptStack(shapeList)
+    win.lineEdit.setFocus()
     if (win.ptStack and win.lineEditStack):
-        clineAng(initial=False)
+        clineAng()
     if len(win.lineEditStack) == 2:
         clineAng()
 
@@ -447,7 +449,7 @@ def rectC(shapeList, *args):  # callback (collector) for rect
     if len(win.ptStack) == 2:
         rect()
 
-def makeWireCircle():
+def makeCircle():
     if win.ptStack:
         wp = win.activeWp
         p1 = win.ptStack.pop()
@@ -462,24 +464,10 @@ def makeWireCircle():
         display.SetSelectionModeVertex()
         #display.SetSelectionModeShape() #This allows selection of intersection points
         
-def makeWireCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
-    print(f"Shapes received by callback function: {shapeList}")
-    print(f"Args received by callback function: {args}")
-    for shape in shapeList:
-        # Next test was added to prevent program from crashing as a result
-        # of unwanted selections while using LMB to rotate display.
-        # Apparently, a registered callback function will get sent various
-        # events and selections in addition to the ones it wants.
-        # To Do: Make sure I understand how this works so it doesn't bite
-        # me elsewhere.
-        if isinstance(shape, TopoDS_Vertex):
-            vrtx = topods_Vertex(shape)
-            gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-            win.ptStack.append(gpPt)
-        else:
-            print(f"Shape is a type: {type(shape)}")
-    if win.ptStack:
-        makeWireCircle()
+def makeCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
+    add_vertex_to_ptStack(shapeList)
+    if (win.ptStack and win.lineEditStack):
+        makeCircle()
 
 def geom():
     pass
@@ -807,7 +795,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
     win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
     win.add_menu('2D Geometry')
-    win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeWireCircle)
+    win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeCircle)
     win.add_menu('Create 3D')
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
@@ -839,7 +827,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Utility', "print(Active Wp Info)", printActiveWpInfo)
     win.add_function_to_menu('Utility', "print(Active Asy Info)", printActiveAsyInfo)
     win.add_function_to_menu('Utility', "print(Active Prt Info)", printActivePartInfo)
-    win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearStack)
+    win.add_function_to_menu('Utility', "Clear Line Edit Stack", win.clearLEStack)
     win.add_function_to_menu('Utility', "Calculator", win.launchCalc)
     win.add_function_to_menu('Utility', "set Units ->in", setUnits_in)
     win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm)
