@@ -375,9 +375,11 @@ def geomLineBldr(cline, t):
 #===========================================================================
 
 class WorkPlane(object):
-    """
-    A 2D plane for making 2D profiles to create and modify 3D geometry.
-    Workplane is defined by an (invisible) underlying surface of type=Geom_Plane.
+    """A 2D plane for creating 2D 'Profiles' used to build or modify 3D geometry.
+
+    In addition to the profile geometry, the workplane also contains 'construction'
+    geometry, which is used to facilitate the accurate layout of profile geometry.
+
     There are three typical ways for creating a new workplane:
     1- Lying on an existing face, with U-dir specified by normal dir of another face
     2- By specification of a gp_Ax3 axis
@@ -465,20 +467,21 @@ class WorkPlane(object):
 
 
     #=======================================================================
-    # Construction
+    # Construction Geometry
     # construction lines (clines) are "infinite" length lines
-    # described by the equation:            ax + by + c = 0
-    # defined by coefficients (mm):         (a, b, c)
+    # described by the equation:        ax + by + c = 0
+    # defined by coefficients:          (a, b, c)
+    # In order to have a nice display of a cline, an 'AIS_Line' is used.
+    # To create an 'AIS_Line', a 'Geom_Line' is needed.
     #
     # circles are defined by coordinates:   (pc, r)
     # points are defined by coordinates:    (x, y)
     #=======================================================================
 
     def cline_gen(self, cline):
-        '''Generate a Geom_Line (used for display) for each cline.
+        '''Generate displayable Geom_Line from cline with (a, b, c) coords.
 
-        All clines are stored in self.clList.
-        All geomLines are stored in self.clineList'''
+        Store clines in self.clList, geomLines in self.clineList'''
         geomLine = geomLineBldr(cline, self.Trsf)
         self.clList.append(cline)
         self.clineList.append(geomLine)
@@ -544,6 +547,15 @@ class WorkPlane(object):
                 pnt.Transform(self.Trsf)
                 pntList.append(pnt)
         return pntList
+
+    #=======================================================================
+    # Profile Geometry
+    # Profile lines are type 'TopoDS_Edge' lines and circles.
+    # They get 'collected' into a closed loop which is then converted to a
+    # wire (type 'TopoDS_Wire'), which can then be used to create a face or
+    # extrude or cut a solid body.
+    #=======================================================================
+
 
     def circ(self, cntr, rad, constr=False):
         """Create a construction circle """

@@ -192,6 +192,23 @@ def makeWP():   # Default workplane located in X-Y plane at 0,0,0
 #
 #############################################
 
+def add_vertex_to_ptStack(shapeList):
+    """Helper function for various toolbar functions"""
+    for shape in shapeList:
+        # isinstance test was added to prevent program crashing as a result
+        # of unwanted face selections while using LMB to rotate display.
+        # Apparently, a registered callback function will get sent various
+        # events and selections in addition to the ones it wants.
+        # To Do: Make sure I understand how this works so it doesn't bite
+        # me elsewhere.
+        if isinstance(shape, TopoDS_Vertex):
+            vrtx = topods_Vertex(shape)
+            gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+            win.ptStack.append(gpPt)
+        else:
+            print(f"(Unwanted) shape type: {type(shape)}")
+
+
 def clineH():   # Horizontal construction line
     if (win.lineEditStack or win.ptStack):
         wp = win.activeWp
@@ -219,12 +236,7 @@ def clineH():   # Horizontal construction line
         win.statusBar().showMessage(statusText)
 
 def clineHC(shapeList, *args):  # callback (collector) for clineH
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if (win.ptStack or win.lineEditStack):
         clineH()
 
@@ -255,12 +267,7 @@ def clineV():   # Vertical construction line
         win.statusBar().showMessage(statusText)
 
 def clineVC(shapeList, *args):  # callback (collector) for clineV
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if (win.ptStack or win.lineEditStack):
         clineV()
 
@@ -291,21 +298,7 @@ def clineHV():   # Horizontal + Vertical construction lines
         win.statusBar().showMessage(statusText)
 
 def clineHVC(shapeList, *args):  # callback (collector) for clineHV
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        # Next test was added to prevent program from crashing as a result
-        # of unwanted face selections while using LMB to rotate display.
-        # Apparently, a registered callback function will get sent various
-        # events and selections in addition to the ones it wants.
-        # To Do: Make sure I understand how this works so it doesn't bite
-        # me elsewhere.
-        if isinstance(shape, TopoDS_Vertex):
-            vrtx = topods_Vertex(shape)
-            gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-            win.ptStack.append(gpPt)
-        else:
-            print(f"Shape is a type: {type(shape)}")
+    add_vertex_to_ptStack(shapeList)
     if (win.ptStack or win.lineEditStack):
         clineHV()
 
@@ -331,12 +324,7 @@ def cline2Pts():
         win.statusBar().showMessage(statusText)
 
 def cline2PtsC(shapeList, *args):  # callback (collector) for cline2Pts
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if len(win.ptStack) == 2:
         cline2Pts()
 
@@ -377,12 +365,7 @@ def clineAng(initial=True):
         win.statusBar().showMessage(statusText)
 
 def clineAngC(shapeList, *args):  # callback (collector) for clineAng
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if (win.ptStack and win.lineEditStack):
         clineAng(initial=False)
     if len(win.lineEditStack) == 2:
@@ -413,12 +396,7 @@ def clineLinBisec():
         display.SetSelectionModeVertex()
 
 def clineLinBisecC(shapeList, *args):  # callback (collector) for clineLinBisec
-    print(shapeList)
-    print(args)
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if len(win.ptStack) == 2:
         clineLinBisec()
 
@@ -436,6 +414,12 @@ def clineTan2():
 
 def ccirc():
     pass
+
+#############################################
+#
+# 2d Profile Geometry functions...
+#
+#############################################
 
 def rect():
     if len(win.ptStack) == 2:
@@ -459,21 +443,9 @@ def rect():
         win.statusBar().showMessage(statusText)
 
 def rectC(shapeList, *args):  # callback (collector) for rect
-    print(shapeList)
-    print(args)
-    win.canva._display.SetSelectionModeVertex()
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+    add_vertex_to_ptStack(shapeList)
     if len(win.ptStack) == 2:
         rect()
-
-#############################################
-#
-# 2d Geometry Line functions...
-#
-#############################################
 
 def makeWireCircle():
     if win.ptStack:
@@ -491,12 +463,21 @@ def makeWireCircle():
         #display.SetSelectionModeShape() #This allows selection of intersection points
         
 def makeWireCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
-    print(shapeList)
-    print(args)
+    print(f"Shapes received by callback function: {shapeList}")
+    print(f"Args received by callback function: {args}")
     for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
+        # Next test was added to prevent program from crashing as a result
+        # of unwanted selections while using LMB to rotate display.
+        # Apparently, a registered callback function will get sent various
+        # events and selections in addition to the ones it wants.
+        # To Do: Make sure I understand how this works so it doesn't bite
+        # me elsewhere.
+        if isinstance(shape, TopoDS_Vertex):
+            vrtx = topods_Vertex(shape)
+            gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+            win.ptStack.append(gpPt)
+        else:
+            print(f"Shape is a type: {type(shape)}")
     if win.ptStack:
         makeWireCircle()
 
