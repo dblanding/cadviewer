@@ -382,14 +382,8 @@ def clineAngBisec():
 def clineLinBisec():
     if len(win.ptStack) == 2:
         wp = win.activeWp
-        p2 = win.ptStack.pop()
-        p1 = win.ptStack.pop()
-        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-        p1.Transform(trsf)
-        p2.Transform(trsf)
-        # 2d points
-        pnt1 = (p1.X(), p1.Y())
-        pnt2 = (p2.X(), p2.Y())
+        pnt2 = get_point_from_ptStack()
+        pnt1 = get_point_from_ptStack()
         wp.lbcl(pnt1, pnt2)
         win.ptStack = []
         win.redraw()
@@ -426,20 +420,14 @@ def ccirc():
 def rect():
     if len(win.ptStack) == 2:
         wp = win.activeWp
-        p2 = win.ptStack.pop()
-        p1 = win.ptStack.pop()
-        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-        p1.Transform(trsf)
-        p2.Transform(trsf)
-        # 2d points
-        pnt1 = (p1.X(), p1.Y())
-        pnt2 = (p2.X(), p2.Y())
+        pnt2 = get_point_from_ptStack()
+        pnt1 = get_point_from_ptStack()
         wp.rect(pnt1, pnt2)
         win.ptStack = []
         win.redraw()
     else:
         win.registerCallback(rectC)
-        win.canva._display.SetSelectionModeVertex()
+        display.SetSelectionModeVertex()
         win.ptStack = []
         statusText = "Select 2 points for Rectangle."
         win.statusBar().showMessage(statusText)
@@ -449,25 +437,27 @@ def rectC(shapeList, *args):  # callback (collector) for rect
     if len(win.ptStack) == 2:
         rect()
 
-def makeCircle():
-    if win.ptStack:
-        wp = win.activeWp
-        p1 = win.ptStack.pop()
-        trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-        p1.Transform(trsf)
-        pnt = (p1.X(), p1.Y())  # 2d point
-        win.activeWp.circ(pnt, 20)
-        win.ptStack = []
-        win.clearCallback()
-    else:
-        win.registerCallback(makeWireCircleC)
-        display.SetSelectionModeVertex()
-        #display.SetSelectionModeShape() #This allows selection of intersection points
-        
-def makeCircleC(shapeList, *args):  # callback (collector) for makeWireCircle
-    add_vertex_to_ptStack(shapeList)
+def circle():
     if (win.ptStack and win.lineEditStack):
-        makeCircle()
+        wp = win.activeWp
+        pnt = get_point_from_ptStack()
+        rad = get_float_value_from_lineEditStack()
+        wp.circ(pnt, rad)
+        win.ptStack = []
+        win.redraw()
+    else:
+        win.registerCallback(circleC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        win.lineEdit.setFocus()
+        statusText = "Pick center of circle and enter radius."
+        win.statusBar().showMessage(statusText)
+        
+def circleC(shapeList, *args):  # callback (collector) for makeWireCircle
+    add_vertex_to_ptStack(shapeList)
+    win.lineEdit.setFocus()
+    if (win.ptStack and win.lineEditStack):
+        circle()
 
 def geom():
     pass
@@ -794,8 +784,6 @@ if __name__ == '__main__':
     win.add_function_to_menu('Workplane', "Workplane on face", wpOnFace)
     win.add_function_to_menu('Workplane', "Workplane by 3 points", wpBy3Pts)
     win.add_function_to_menu('Workplane', "(Def) Workplane @Z=0", makeWP)
-    win.add_menu('2D Geometry')
-    win.add_function_to_menu('2D Geometry', "Make Wire Circle", makeCircle)
     win.add_menu('Create 3D')
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
@@ -880,7 +868,7 @@ if __name__ == '__main__':
     win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', circle)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', geom)
 

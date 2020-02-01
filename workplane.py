@@ -538,7 +538,6 @@ class WorkPlane(object):
                             if p2p_dist(P, point) > self.accuracy:
                                 if P not in pointList:
                                     pointList.append(P)
-                        
         pntList = []    # list of gp_Pnt2d points
         for point in pointList:
             if point:
@@ -556,7 +555,6 @@ class WorkPlane(object):
     # create a face or extrude or cut a solid body.
     #=======================================================================
 
-
     def circ(self, cntr, rad, constr=False):
         """Create a construction circle """
         cx, cy = cntr
@@ -568,23 +566,7 @@ class WorkPlane(object):
             self.ccircList.append(geomCirc)
         else:
             edge = BRepBuilderAPI_MakeEdge(geomCirc).Edge()
-            self.edgeList.append(self.edge)
-
-    def circ2(self, cntr, rad, constr=False):
-        """Create a circle """
-        cx, cy = cntr
-        cntrPt = gp_Pnt2d(cx, cy)
-        ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
-        #geom2dCirc = 
-        aCirc = GCE2d_MakeCircle(ax2, rad)
-        aCirc.Transform(self.Trsf)
-        if constr:
-            self.ccircList.append(aCirc)
-        else:
-            acircle = geomapi_To3d(Geom_Curve(aCirc), self.gpPlane) # Handle_Geom_Curve
-            edge = BRepBuilderAPI_MakeEdge(geomCirc.Value(), self.gpPlane)
-            self.wire = BRepBuilderAPI_MakeWire(edge.Edge()).Wire()
-            self.wireList.append(self.wire)
+            self.edgeList.append(edge)
 
     def rect(self, pnt1, pnt2):
         """Create a rectangle from two diagonally opposite corners."""
