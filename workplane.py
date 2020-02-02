@@ -439,6 +439,7 @@ class WorkPlane(object):
         self.wire = None
         self.hvcl((0,0))    # Make H-V clines through origin
         self.accuracy = 0.001   # min distance between two points
+        self.infinity = 1e+10  # max dist from origin for intersection pts
         
     def makeSqProfile(self, size):
         # points and segments need to be in CW sequence to get W pointing along Z
@@ -524,6 +525,7 @@ class WorkPlane(object):
     def intersectPts(self):
         """Return list of intersection points among construction lines
         """
+        infinity = self.infinity
         lineList = list(self.clList) # copy list of 'native' 2d lines
         pointList = []  # List of 'native' 2d points
         for i in range(len(lineList)):
@@ -535,14 +537,15 @@ class WorkPlane(object):
                         pointList.append(P) # first point in list
                     else:
                         for point in pointList:
-                            if p2p_dist(P, point) > self.accuracy:
+                            if self.accuracy < p2p_dist(P, point) < infinity:
                                 if P not in pointList:
                                     pointList.append(P)
-        pntList = []    # list of gp_Pnt2d points
+        # Generate list of gp_Pnts
+        pntList = []
         for point in pointList:
-            if point:
+            if point:  # exclude 'None' types
                 x,y = point
-                pnt = gp_Pnt(x,y,0)
+                pnt = gp_Pnt(x, y, 0)
                 pnt.Transform(self.Trsf)
                 pntList.append(pnt)
         return pntList
