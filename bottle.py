@@ -251,10 +251,11 @@ def makePoints():
 
 def makeLines():
     global aEdge1, aEdge2, aEdge3
+    # Make type 'Geom_TrimmedCurve' from type 'gp_Pnt'
     aArcOfCircle = GC_MakeArcOfCircle(aPnt2,aPnt3 ,aPnt4)
     aSegment1 = GC_MakeSegment(aPnt1 , aPnt2)
     aSegment2 = GC_MakeSegment(aPnt4 , aPnt5)
-    # Display lines
+    # Make type 'TopoDS_Edge' from type 'Geom_TrimmedCurve'
     aEdge1 = BRepBuilderAPI_MakeEdge(aSegment1.Value())
     aEdge2 = BRepBuilderAPI_MakeEdge(aArcOfCircle.Value())
     aEdge3 = BRepBuilderAPI_MakeEdge(aSegment2.Value())
@@ -262,6 +263,7 @@ def makeLines():
 
 def makeHalfWire():
     global aWire
+    # Make type 'TopoDS_Wire' from type 'TopoDS_Edge'
     aWire  = BRepBuilderAPI_MakeWire(aEdge1.Edge(),
                                      aEdge2.Edge(),
                                      aEdge3.Edge()).Wire()

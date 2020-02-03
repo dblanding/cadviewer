@@ -21,7 +21,6 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-
 import math
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
@@ -34,10 +33,12 @@ from OCC.Core.Geom2d import Geom2d_Circle
 from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve, Geom_Line
 from OCC.Core.GeomAPI import geomapi_To3d
 from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Lin, gp_Lin2d, gp_Pnt,
-                         gp_Pnt2d, gp_Pln, gp_Trsf)
+                         gp_Pnt2d, gp_Pln, gp_Trsf, gp_Vec)
 from OCC.Core.GProp import GProp_GProps
 from OCC.Core.TopAbs import TopAbs_REVERSED
 from OCCUtils.Construct import face_normal
+
+INFINITY = 1e+10  # mm (on the order of Earth's diameter)
 
 #===========================================================================
 # 
@@ -429,6 +430,7 @@ class WorkPlane(object):
         self.uDir = uDir
         self.vDir = vDir
         self.wDir = wDir
+        self.wVec = gp_Vec(wDir)
         self.face = face
         self.size = size
         self.border = self.makeWpBorder(self.size)
@@ -439,7 +441,6 @@ class WorkPlane(object):
         self.wire = None
         self.hvcl((0,0))    # Make H-V clines through origin
         self.accuracy = 0.001   # min distance between two points
-        self.infinity = 1e+10  # max dist from origin for intersection pts
         
     def makeSqProfile(self, size):
         # points and segments need to be in CW sequence to get W pointing along Z
@@ -525,7 +526,6 @@ class WorkPlane(object):
     def intersectPts(self):
         """Return list of intersection points among construction lines
         """
-        infinity = self.infinity
         lineList = list(self.clList) # copy list of 'native' 2d lines
         pointList = []  # List of 'native' 2d points
         for i in range(len(lineList)):
@@ -537,7 +537,7 @@ class WorkPlane(object):
                         pointList.append(P) # first point in list
                     else:
                         for point in pointList:
-                            if self.accuracy < p2p_dist(P, point) < infinity:
+                            if self.accuracy < p2p_dist(P, point) < INFINITY:
                                 if P not in pointList:
                                     pointList.append(P)
         # Generate list of gp_Pnts
@@ -553,9 +553,9 @@ class WorkPlane(object):
     #=======================================================================
     # Profile Geometry
     # Profile lines are type 'TopoDS_Edge' lines and circles.
-    # They will eventually get 'collected' into a closed loop which is then
-    # converted to a wire (type 'TopoDS_Wire'), which can then be used to
-    # create a face or extrude or cut a solid body.
+    # They will eventually get 'collected' into a closed loop and then used
+    # build a wire (type 'TopoDS_Wire'), which can then be used as a tool to
+    # extrude or cut a solid body.
     #=======================================================================
 
     def circ(self, cntr, rad, constr=False):
@@ -594,3 +594,14 @@ class WorkPlane(object):
         edges = (e1, e2, e3, e4)
         for edge in edges:
             self.edgeList.append(edge)
+
+    #=======================================================================
+    # Topo_DS_Wire
+    # This is the end result of the workplane: To generate a Topo_DS_Wire
+    # Which can be used as a tool to build or modify a face or solid body.
+    #=======================================================================
+
+    def makeWire(self):
+        """Generate and return a wire from the edges in self.edgeList"""
+        self.wire = BRepBuilderAPI_MakeWire(*self.edgeList).Wire()
+        return self.wire

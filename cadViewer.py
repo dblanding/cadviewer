@@ -480,6 +480,33 @@ def makeCyl():
     uid = win.getNewPartUID(myBody, name=name)
     win.redraw()
     
+def extrude():
+    """Extrude profile on active WP to create a new part."""
+    wp = win.activeWp
+    if len(win.lineEditStack) == 2:
+        name = win.lineEditStack.pop()
+        length = get_float_value_from_lineEditStack()
+        wire = wp.makeWire()
+        myFaceProfile = BRepBuilderAPI_MakeFace(wire)
+        if myFaceProfile.IsDone():
+            bottomFace = myFaceProfile.Face()
+        aPrismVec = wp.wVec * length
+        myBody = BRepPrimAPI_MakePrism(myFaceProfile.Shape(),
+                                       aPrismVec).Shape()
+        uid = win.getNewPartUID(myBody, name=name)
+        win.redraw()
+    else:
+        win.registerCallback(extrudeC)
+        win.lineEdit.setFocus()
+        statusText = "Enter extrusion length, then enter part name."
+        win.statusBar().showMessage(statusText)
+
+def extrudeC(shapeList, *args):
+    win.lineEdit.setFocus()
+    if len(win.lineEditStack) == 2:
+        extrude()
+
+
 #############################################
 #
 # 3D Geometry positioning functons...
@@ -502,57 +529,6 @@ def rotateAP():
 # 3D Geometry modification functons...
 #
 #############################################
-
-def hole():
-    if (win.lineEditStack and win.ptStack):
-        text = win.lineEditStack.pop()
-        holeR = float(text)
-        pnt = win.ptStack.pop()
-        holeCyl = BRepPrimAPI_MakeCylinder(holeR, 100).Shape()
-        # Transform to put holeCyl in -Z direction
-        origin = gp_Pnt(0,0,0)
-        wDir = gp_Dir(0,0,-1)   # -Z direction
-        uDir = gp_Dir(1,0,0)
-        ax3 = gp_Ax3(origin, wDir, uDir)          
-        mTrsf = gp_Trsf()
-        mTrsf.SetTransformation(ax3)
-        topLoc = TopLoc_Location(mTrsf)
-        holeCyl.Move(topLoc)
-        # Move holeCyl from global origin to wp origin
-        wp = win.activeWp
-        aTopLoc = TopLoc_Location(wp.Trsf)
-        holeCyl.Move(aTopLoc)
-        # Move holeCyl from wp origin to selected pnt
-        aVec = gp_Vec(wp.origin, pnt)
-        aTrsf = gp_Trsf()
-        aTrsf.SetTranslation(aVec)
-        bTopLoc = TopLoc_Location(aTrsf)
-        holeCyl.Move(bTopLoc)
-        # Subtract holeCyl from win.activePart
-        workPart = win.activePart
-        wrkPrtUID = win.activePartUID
-        newPart = BRepAlgoAPI_Cut(workPart, holeCyl).Shape()
-        uid = win.getNewPartUID(newPart, ancestor=wrkPrtUID)
-        win.statusBar().showMessage('Hole operation complete')
-        win.clearCallback()
-        win.redraw()
-    else:
-        win.registerCallback(holeC)
-        display.SetSelectionModeVertex()
-        display.SetSelectionModeShape()
-        statusText = "Select location of hole then specify hole radius."
-        win.statusBar().showMessage(statusText)
-
-def holeC(shapeList, *args):  # callback (collector) for hole
-    print(shapeList)
-    print(args)
-    win.lineEdit.setFocus()
-    for shape in shapeList:
-        vrtx = topods_Vertex(shape)
-        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
-        win.ptStack.append(gpPt)
-    if (win.ptStack and win.lineEditStack):
-        hole()
 
 def fillet(event=None):
     if (win.lineEditStack and win.edgeStack):
@@ -787,9 +763,9 @@ if __name__ == '__main__':
     win.add_menu('Create 3D')
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
+    win.add_function_to_menu('Create 3D', "extrude", extrude)
     win.add_menu('Modify Active Part')
     win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
-    win.add_function_to_menu('Modify Active Part', "Make Hole", hole)
     win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
     win.add_function_to_menu('Modify Active Part', "Shell", shell)
     # excised dynamic3Dmodification functions
