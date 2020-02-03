@@ -38,7 +38,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
                              QInputDialog, QTreeWidgetItemIterator)
-from OCC.Core.AIS import AIS_Shape, AIS_Line
+from OCC.Core.AIS import AIS_Shape, AIS_Line, AIS_Circle
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
@@ -631,7 +631,14 @@ class MainWindow(QMainWindow):
                 for point in pntlist:
                     self.canva._display.DisplayShape(point)
                 for ccirc in wp.ccircList:
-                    self.canva._display.DisplayShape(ccirc, color=clClr)
+                    aiscirc = AIS_Circle(ccirc)
+                    drawer = aisline.Attributes()
+                    # asp parameters: (color, type, width)
+                    asp = Prs3d_LineAspect(clClr, 2, 1.0)
+                    drawer.SetLineAspect(asp)
+                    aiscirc.SetAttributes(drawer)
+                    context.Display(aiscirc, False)
+                    # self.canva._display.DisplayShape(ccirc, color=clClr)
                 for edge in wp.edgeList:
                     self.canva._display.DisplayShape(edge, color="WHITE")
                 self.canva._display.Repaint()

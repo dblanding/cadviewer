@@ -409,7 +409,28 @@ def clineTan2():
     pass
 
 def ccirc():
-    pass
+    """Create a construction circle from center and radius."""
+    if (win.ptStack and win.lineEditStack):
+        wp = win.activeWp
+        pnt = get_point_from_ptStack()
+        rad = get_float_value_from_lineEditStack()
+        wp.circ(pnt, rad, constr=True)
+        win.ptStack = []
+        win.redraw()
+    else:
+        win.registerCallback(ccircC)
+        display.SetSelectionModeVertex()
+        win.ptStack = []
+        win.lineEdit.setFocus()
+        statusText = "Pick center of construction circle and enter radius."
+        win.statusBar().showMessage(statusText)
+
+def ccircC(shapeList, *args):
+    """callback (collector) for ccirc"""
+    add_vertex_to_ptStack(shapeList)
+    win.lineEdit.setFocus()
+    if (win.ptStack and win.lineEditStack):
+        ccirc()
 
 #############################################
 #
@@ -418,6 +439,7 @@ def ccirc():
 #############################################
 
 def rect():
+    """Create a profile geometry rectangle from two diagonally opposite corners."""
     if len(win.ptStack) == 2:
         wp = win.activeWp
         pnt2 = get_point_from_ptStack()
@@ -432,12 +454,14 @@ def rect():
         statusText = "Select 2 points for Rectangle."
         win.statusBar().showMessage(statusText)
 
-def rectC(shapeList, *args):  # callback (collector) for rect
+def rectC(shapeList, *args):
+    """callback (collector) for rect"""
     add_vertex_to_ptStack(shapeList)
     if len(win.ptStack) == 2:
         rect()
 
 def circle():
+    """Create a profile geoometry circle from center and radius."""
     if (win.ptStack and win.lineEditStack):
         wp = win.activeWp
         pnt = get_point_from_ptStack()
@@ -453,7 +477,8 @@ def circle():
         statusText = "Pick center of circle and enter radius."
         win.statusBar().showMessage(statusText)
         
-def circleC(shapeList, *args):  # callback (collector) for makeWireCircle
+def circleC(shapeList, *args):
+    """callback (collector) for circle"""
     add_vertex_to_ptStack(shapeList)
     win.lineEdit.setFocus()
     if (win.ptStack and win.lineEditStack):
@@ -821,7 +846,7 @@ if __name__ == '__main__':
     selectSubMenu.addAction('Shape', display.SetSelectionModeShape)    
     selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
     win.popMenu.addAction('Clear Callback', win.clearCallback)
-
+    # Toolbar buttons
     win.wpToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
