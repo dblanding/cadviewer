@@ -542,14 +542,12 @@ class WorkPlane(object):
         """List of intersection points among c-lines, c-circs
 
         Find the points in 2d, then convert them to 3d and return list."""
-        clList = list(self.clList) # (copy) list of 'native' 2d lines
-        ccList = list(self.ccList) # (copy) list of 'native' 2d ccircs
         pointList = []  # List of intersections as 'native' 2d points
 
         # find intersection points of clines with ccircs
         for ccirc in self.ccirc2dList:  # type Geom2d_Circle
             for cline in self.cline2dList:  # type Geom2d_Line
-                inters = Geom2dAPI_InterCurveCurve(ccirc, cline, 1e-6)
+                inters = Geom2dAPI_InterCurveCurve(ccirc, cline)
                 if inters.NbPoints():
                     for i in range(inters.NbPoints()):
                         pnt2d = inters.Point(i+1)
@@ -557,9 +555,22 @@ class WorkPlane(object):
                         y = pnt2d.Y()
                         pointList.append((x,y))
 
-        # to do: find intersections among ccircs
+        # find intersection points among ccircs
+        ccirc2dList = list(self.ccirc2dList) # (copy) list of Geom2d_ccircs
+        for i in range(len(ccirc2dList)):
+            circ0 = ccirc2dList.pop()
+            for circ in ccirc2dList:
+                inters = Geom2dAPI_InterCurveCurve(circ0, circ)
+                if inters.NbPoints():
+                    for i in range(inters.NbPoints()):
+                        pnt2d = inters.Point(i+1)
+                        x = pnt2d.X()
+                        y = pnt2d.Y()
+                        if (x, y) not in pointList:
+                            pointList.append((x, y))
 
         # find intersection points among clines
+        clList = list(self.clList) # (copy) list of 'native' 2d lines
         for i in range(len(clList)):
             line0 = clList.pop()
             for line in clList:
@@ -573,7 +584,7 @@ class WorkPlane(object):
                                 if P not in pointList:
                                     pointList.append(P)
 
-        # Generate list of gp_Pnts
+        # Generate list of gp_Pnts (3d)
         pntList = []
         for point in pointList:
             if point:  # exclude 'None' types
@@ -585,10 +596,10 @@ class WorkPlane(object):
 
     #=======================================================================
     # Profile Geometry
-    # Profile lines are type 'TopoDS_Edge' lines and circles.
+    # Profile lines are type 'TopoDS_Edge' lines, circles and arcs.
     # They will eventually get 'collected' into a closed loop and then used
-    # build a wire (type 'TopoDS_Wire'), which can then be used as a tool to
-    # extrude or cut a solid body.
+    # to build a wire (type 'TopoDS_Wire'), which can then be used as a tool
+    # to extrude or cut a solid body.
     #=======================================================================
 
     def circ(self, cntr, rad, constr=False):
