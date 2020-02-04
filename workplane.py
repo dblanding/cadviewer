@@ -453,8 +453,8 @@ class WorkPlane(object):
         self.ccircs = set() # set of c-circs with (pc, r) coefficients
         self.edgeList = [] # List of profile lines type: <TopoDS_Edge>
         self.wire = None
+        self.accuracy = 1e-6   # min distance between two points
         self.hvcl((0,0))    # Make H-V clines through origin
-        self.accuracy = 0.001   # min distance between two points
         
     def makeSqProfile(self, size):
         # points and segments need to be in CW sequence to get W pointing along Z
@@ -499,7 +499,16 @@ class WorkPlane(object):
     #=======================================================================
 
     def cline_gen(self, cline):
-        self.clines.add(cline)
+        a, b, c = cline
+        unique = True
+        for d, e, f in self.clines:
+            if (abs(a-d) < self.accuracy and\
+                abs(b-e) < self.accuracy and\
+                abs(c-f) < self.accuracy):
+                unique = False
+                break
+        if unique:
+            self.clines.add(cline)
 
     def geom2dLines(self):
         """Return self.clines as list of type: <Geom2d_Line>."""
@@ -554,21 +563,34 @@ class WorkPlane(object):
         newline = perp_line(baseline, p0)
         self.cline_gen(newline)
 
+    def unique(self, point, points):
+        """boolean test for uniqueness within collection."""
+        x0, y0 = point
+        unique = True
+        for x, y in points:
+            if (abs(x - x0) < self.accuracy and abs(y - y0) < self.accuracy):
+                unique = False
+                break
+        return unique
+
     def intersectPts(self):
         """List of intersection points among c-lines & c-circs"""
 
-        points = set()  # Set of intersections as (x, y) 2d points
+        points = set()  # set of intersections as (x, y) 2d points
 
         # find intersection points of clines with ccircs
         for ccirc in self.geom2dCircs():  # type Geom2d_Circle
             for cline in self.geom2dLines():  # type Geom2d_Line
                 inters = Geom2dAPI_InterCurveCurve(ccirc, cline)
                 if inters.NbPoints():
+                    candidates = []
                     for i in range(inters.NbPoints()):
-                        pnt2d = inters.Point(i+1)
-                        x = pnt2d.X()
-                        y = pnt2d.Y()
-                        points.add((x,y))
+                        pnt2d = inters.Point(i+1)  # OCC type 2d point
+                        point = (pnt2d.X(), pnt2d.Y())  # simple (x, y) point
+                        candidates.append(point)
+                    for pnt in candidates:
+                        if self.unique(pnt, points):
+                            points.add(pnt)
 
         # find intersection points among ccircs
         ccirc2dList = list(self.ccircs)  # copy list
@@ -576,28 +598,33 @@ class WorkPlane(object):
             circ0 = ccirc2dList.pop()
             for circ in ccirc2dList:
                 inters = circ_circ_inters(circ0, circ)
-                for point in inters:
-                    points.add(point)
+                for pnt in inters:
+                    if self.unique(pnt, points):
+                        points.add(pnt)
 
         # find intersection points among clines
         clList = list(self.clines) # list of (a, b, c) 2d lines
+        print(f"Number of c-lines: {len(clList)}")
+        print(clList)
         for i in range(len(clList)):
             line0 = clList.pop()
             for line in clList:
                 P = intersection(line0, line)
                 if P:
                     if not points:
-                        points.add(P) # first point in set
+                        points.add(P) # first point
                     else:
-                        newpoints = []
-                        for point in points:
-                            if self.accuracy < p2p_dist(P, point) < INFINITY:
+                        newpoints = []  # could be 0, 1, or 2
+                        for pnt in points:
+                            if p2p_dist(P, pnt) < INFINITY:
                                 newpoints.append(P)
-                        for newpnt in newpoints:
-                            points.add(newpnt)
+                        for pnt in newpoints:
+                            if self.unique(pnt, points):
+                                points.add(pnt)
 
         # convert 2d points to 3d
-        print(len(points))
+        print(f"Number of points: {len(points)}")
+        print(points)
         pntList = []
         for point in points:
             if point:  # exclude 'None' types
