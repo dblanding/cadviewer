@@ -557,7 +557,7 @@ class WorkPlane(object):
     def intersectPts(self):
         """List of intersection points among c-lines & c-circs"""
 
-        pointList = []  # List of intersections as (x, y) 2d points
+        points = set()  # Set of intersections as (x, y) 2d points
 
         # find intersection points of clines with ccircs
         for ccirc in self.geom2dCircs():  # type Geom2d_Circle
@@ -568,7 +568,7 @@ class WorkPlane(object):
                         pnt2d = inters.Point(i+1)
                         x = pnt2d.X()
                         y = pnt2d.Y()
-                        pointList.append((x,y))
+                        points.add((x,y))
 
         # find intersection points among ccircs
         ccirc2dList = list(self.ccircs)  # copy list
@@ -577,7 +577,7 @@ class WorkPlane(object):
             for circ in ccirc2dList:
                 inters = circ_circ_inters(circ0, circ)
                 for point in inters:
-                    pointList.append(point)
+                    points.add(point)
 
         # find intersection points among clines
         clList = list(self.clines) # list of (a, b, c) 2d lines
@@ -586,17 +586,20 @@ class WorkPlane(object):
             for line in clList:
                 P = intersection(line0, line)
                 if P:
-                    if not pointList:
-                        pointList.append(P) # first point in list
+                    if not points:
+                        points.add(P) # first point in set
                     else:
-                        for point in pointList:
+                        newpoints = []
+                        for point in points:
                             if self.accuracy < p2p_dist(P, point) < INFINITY:
-                                if P not in pointList:
-                                    pointList.append(P)
+                                newpoints.append(P)
+                        for newpnt in newpoints:
+                            points.add(newpnt)
 
         # convert 2d points to 3d
+        print(len(points))
         pntList = []
-        for point in pointList:
+        for point in points:
             if point:  # exclude 'None' types
                 x,y = point
                 pnt = gp_Pnt(x, y, 0)
@@ -617,6 +620,7 @@ class WorkPlane(object):
         circ = (cntr, rad)
         if constr:
             self.ccircs.add(circ)
+            self.hvcl(cntr)
         else:
             edge = BRepBuilderAPI_MakeEdge(self.convert_circ_to_geomCirc(circ)).Edge()
             self.edgeList.append(edge)
