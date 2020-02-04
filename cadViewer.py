@@ -466,7 +466,7 @@ def circle():
         wp = win.activeWp
         pnt = get_point_from_ptStack()
         rad = get_float_value_from_lineEditStack()
-        wp.circ(pnt, rad)
+        wp.circle(pnt, rad)
         win.ptStack = []
         win.redraw()
     else:

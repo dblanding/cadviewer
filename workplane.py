@@ -363,34 +363,18 @@ def rotate_pt(pt, ang, ctr):
     v = y * math.cos(A) + x * math.sin(A)
     return add_pt((u, v), ctr)
 
-def geomLineBldr(cline, t):
-    """Return (Geom2d_line, Geom_Line) from cline and transform of 2d workplane."""
-
-    a, b, c = cline
-    gpLin2d = gp_Lin2d(a, b, c)
-    geom2dLine = Geom2d_Line(gpLin2d)
-    gpDir2d = gpLin2d.Direction()
-    gpPnt2d = gpLin2d.Location()
-    gpDir = gp_Dir(gpDir2d.X(), gpDir2d.Y(), 0).Transformed(t)
-    gpPnt = gp_Pnt(gpPnt2d.X(), gpPnt2d.Y(), 0).Transformed(t)
-    return (Geom_Line(gpPnt, gpDir), geom2dLine)
-
-def convert_circ_to_geom2dCirc(circ):
-    (cx, cy), r = circ
-    return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), r))
-
 #===========================================================================
 
 class WorkPlane(object):
-    """A 2D plane for creating 2D 'Profiles' used to build or modify 3D geometry.
+    """A 2D plane for creating 2D 'Profiles' for building or modifying 3D geometry.
 
-    In addition to the profile geometry, the workplane also contains 'construction'
-    geometry, which is used to facilitate the accurate layout of profile geometry.
+    In addition to profile geometry, the workplane also contains 'construction'
+    geometry, useful in making an accurate layout.
 
     There are three typical ways for creating a new workplane:
     1- Lying on an existing face, with U-dir specified by normal dir of another face
     2- By specification of a gp_Ax3 axis
-    3- Default (located at the Origin in the X-Y plane, with U,V,W aligned with X,Y,Z)
+    3- Default (located with U,V,W aligned with X,Y,Z)
     """
     def __init__(self, size, face=None, faceU=None, ax3=None):
         # gp_Ax3 of XYZ coord system
@@ -440,13 +424,9 @@ class WorkPlane(object):
         self.face = face
         self.size = size
         self.border = self.makeWpBorder(self.size)
-        self.clList = [] # List of c-lines (native type w/ a, b, c coefs)
-        self.clineList = [] # List of c-lines (type: Geom_Line)
-        self.cline2dList = [] # List of 2d c-lines (type: Geom2d_Line)
-        self.ccList = [] # List of c-circs (native type w/ pc, r coefs)
-        self.ccircList = [] # List of c-circs (type: Geom_Circle)
-        self.ccirc2dList = [] # List of 2d c-circs (type: Geom2d_Circle)
-        self.edgeList = [] # List of TopoDS_Edges
+        self.clList = [] # List of c-lines with (a, b, c) coefficients
+        self.ccList = [] # List of c-circs with (pc, r) coefficients
+        self.edgeList = [] # List of profile lines type: <TopoDS_Edge>
         self.wire = None
         self.hvcl((0,0))    # Make H-V clines through origin
         self.accuracy = 0.001   # min distance between two points
@@ -483,25 +463,36 @@ class WorkPlane(object):
     # described by the equation:        ax + by + c = 0
     # defined by coefficients:          (a, b, c)
     # In order to have a nice display of a cline, an 'AIS_Line' is used.
-    # To create an 'AIS_Line', a 'Geom_Line' is needed.
+    # To create an 'AIS_Line', type 'Geom_Line' is needed.
     #
     # circles are defined by coordinates:   (pc, r)
     # In order to have a nice display of a ccirc, an 'AIS_Circle' is used.
-    # To create an 'AIS_Circle', a 'Geom_Circle' is needed.
+    # To create an 'AIS_Circle', type 'Geom_Circle' is needed.
+    # In order to find intersection points (x, y), 'Geom2d_Circle' is needed.
+    # Methods are provided to generate all the various types needed.
     #
-    # points are defined by coordinates:    (x, y)
     #=======================================================================
 
     def cline_gen(self, cline):
-        '''Generate displayable Geom_Line from cline with (a, b, c) coords.
-
-        Store clines in self.clList,
-        geomLines in self.clineList,
-        geom2dLines in cline2dList.'''
-        geomLine, geom2dLine = geomLineBldr(cline, self.Trsf)
         self.clList.append(cline)
-        self.clineList.append(geomLine)
-        self.cline2dList.append(geom2dLine)
+
+    def geom2dLines(self):
+        """Return self.clList as list of type: <Geom2d_Line>."""
+        return [Geom2d_Line(gp_Lin2d(*cline)) for cline in self.clList]
+
+    def geomLineBldr(self, cline):
+        """Convert native cline to type: <Geom_Line>."""
+        a, b, c = cline
+        gpLin2d = gp_Lin2d(a, b, c)
+        gpDir2d = gpLin2d.Direction()
+        gpPnt2d = gpLin2d.Location()
+        gpPnt = gp_Pnt(gpPnt2d.X(), gpPnt2d.Y(), 0).Transformed(self.Trsf)
+        gpDir = gp_Dir(gpDir2d.X(), gpDir2d.Y(), 0).Transformed(self.Trsf)
+        return Geom_Line(gpPnt, gpDir)
+
+    def geomLines(self):
+        """Return self.clList as list of type: <Geom_Line>."""
+        return [self.geomLineBldr(cline) for cline in self.clList]
 
     def hcl(self, pnt=None):
         """Create horizontal construction line from a point (x,y)."""
@@ -539,14 +530,13 @@ class WorkPlane(object):
         self.cline_gen(newline)
 
     def intersectPts(self):
-        """List of intersection points among c-lines, c-circs
+        """List of intersection points among c-lines & c-circs"""
 
-        Find the points in 2d, then convert them to 3d and return list."""
-        pointList = []  # List of intersections as 'native' 2d points
+        pointList = []  # List of intersections as (x, y) 2d points
 
         # find intersection points of clines with ccircs
-        for ccirc in self.ccirc2dList:  # type Geom2d_Circle
-            for cline in self.cline2dList:  # type Geom2d_Line
+        for ccirc in self.geom2dCircs():  # type Geom2d_Circle
+            for cline in self.geom2dLines():  # type Geom2d_Line
                 inters = Geom2dAPI_InterCurveCurve(ccirc, cline)
                 if inters.NbPoints():
                     for i in range(inters.NbPoints()):
@@ -556,7 +546,7 @@ class WorkPlane(object):
                         pointList.append((x,y))
 
         # find intersection points among ccircs
-        ccirc2dList = list(self.ccirc2dList) # (copy) list of Geom2d_ccircs
+        ccirc2dList = self.geom2dCircs()# (copy) list of Geom2d_ccircs
         for i in range(len(ccirc2dList)):
             circ0 = ccirc2dList.pop()
             for circ in ccirc2dList:
@@ -570,7 +560,7 @@ class WorkPlane(object):
                             pointList.append((x, y))
 
         # find intersection points among clines
-        clList = list(self.clList) # (copy) list of 'native' 2d lines
+        clList = list(self.clList) # (copy) list of (a, b, c) 2d lines
         for i in range(len(clList)):
             line0 = clList.pop()
             for line in clList:
@@ -584,7 +574,7 @@ class WorkPlane(object):
                                 if P not in pointList:
                                     pointList.append(P)
 
-        # Generate list of gp_Pnts (3d)
+        # convert 2d points to 3d
         pntList = []
         for point in pointList:
             if point:  # exclude 'None' types
@@ -602,22 +592,37 @@ class WorkPlane(object):
     # to extrude or cut a solid body.
     #=======================================================================
 
-    def circ(self, cntr, rad, constr=False):
-        """Create a construction circle """
-        ccirc = (cntr, rad)
-        cx, cy = cntr
-        geom2dCirc = convert_circ_to_geom2dCirc(ccirc)
+    def circle(self, cntr, rad, constr=False):
+        """Create a circle (constr or profile)"""
+        circ = (cntr, rad)
+        if constr:
+            self.ccList.append(circ)
+        else:
+            edge = BRepBuilderAPI_MakeEdge(self.convert_circ_to_geomCirc(circ)).Edge()
+            self.edgeList.append(edge)
+
+    def convert_circ_to_geomCirc(self, circ):
+        (cx, cy), rad = circ
         cntrPt = gp_Pnt(cx, cy, 0)
         ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
         geomCirc = Geom_Circle(ax2, rad)
         geomCirc.Transform(self.Trsf)
-        if constr:
-            self.ccList.append(ccirc)
-            self.ccirc2dList.append(convert_circ_to_geom2dCirc(ccirc))
-            self.ccircList.append(geomCirc)
-        else:
-            edge = BRepBuilderAPI_MakeEdge(geomCirc).Edge()
-            self.edgeList.append(edge)
+        return geomCirc
+
+    def geomCircs(self):
+        """Return self.ccList as type Geom_Circles."""
+        return [self.convert_circ_to_geomCirc(circ)
+                for circ in self.ccList]
+
+    def convert_circ_to_geom2dCirc(self, circ):
+        (cx, cy), r = circ
+        return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy),
+                                               gp_Dir2d(1, 0)), r))
+
+    def geom2dCircs(self):
+        """Return self.ccList as type Geom2d_Circles."""
+        return [self.convert_circ_to_geom2dCirc(circ)
+                for circ in self.ccList]
 
     def rect(self, pnt1, pnt2):
         """Create a rectangle from two diagonally opposite corners."""
