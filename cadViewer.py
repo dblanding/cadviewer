@@ -190,12 +190,13 @@ def makeWP():   # Default workplane located in X-Y plane at 0,0,0
 #############################################
 
 def add_vertex_to_ptStack(shapeList):
-    """Helper function for various toolbar functions"""
+    """Helper function to convert vertex to gp_Pnt and put on ptStack."""
     for shape in shapeList:
         # isinstance test was added to prevent program crashing as a result
         # of unwanted face selections while using LMB to rotate display.
         # Apparently, a registered callback function will get sent various
         # events and selections in addition to the ones it wants.
+        print(f"Selected item is type: {shape}")
         if isinstance(shape, TopoDS_Vertex):
             vrtx = topods_Vertex(shape)
             gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -203,8 +204,8 @@ def add_vertex_to_ptStack(shapeList):
         else:
             print(f"(Unwanted) shape type: {type(shape)}")
 
-def get_float_value_from_lineEditStack():
-    """Helper function for various toolbar functions"""
+def get_distance_value_from_lineEditStack():
+    """Helper function to get distance(accounting for win.unitscale)"""
     text = win.lineEditStack.pop()
     try:
         value = float(text) * win.unitscale
@@ -215,7 +216,7 @@ def get_float_value_from_lineEditStack():
     return value
 
 def get_point_from_lineEditStack():
-    """Helper function for various toolbar functions"""
+    """Helper function to find two comma separated (x, y) values."""
     try:
         strx, stry = win.lineEditStack.pop().split(',')
         x = float(strx) * win.unitscale
@@ -228,7 +229,7 @@ def get_point_from_lineEditStack():
     return pt2d
 
 def get_point_from_ptStack():
-    """Helper function for various toolbar functions"""
+    """Pop 3d point from ptStack and convert to 2d point on activeWp."""
     wp = win.activeWp
     pnt = win.ptStack.pop()
     trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
@@ -243,7 +244,7 @@ def clineH():   # Horizontal construction line
             p = get_point_from_ptStack()
         else:
             x = 0
-            y = get_float_value_from_lineEditStack()
+            y = get_distance_value_from_lineEditStack()
             if y is None:
                 return
             p = (x,y)
@@ -269,7 +270,7 @@ def clineV():   # Vertical construction line
         if win.ptStack:
             p = get_point_from_ptStack()
         else:
-            x = get_float_value_from_lineEditStack()
+            x = get_distance_value_from_lineEditStack()
             if x is None:
                 return
             y = 0
@@ -413,7 +414,7 @@ def ccirc():
     if (win.ptStack and win.lineEditStack):
         wp = win.activeWp
         pnt = get_point_from_ptStack()
-        rad = get_float_value_from_lineEditStack()
+        rad = get_distance_value_from_lineEditStack()
         wp.circ(pnt, rad, constr=True)
         win.ptStack = []
         win.redraw()
@@ -465,7 +466,7 @@ def circle():
     if (win.ptStack and win.lineEditStack):
         wp = win.activeWp
         pnt = get_point_from_ptStack()
-        rad = get_float_value_from_lineEditStack()
+        rad = get_distance_value_from_lineEditStack()
         wp.circle(pnt, rad)
         win.ptStack = []
         win.redraw()
@@ -510,7 +511,7 @@ def extrude():
     wp = win.activeWp
     if len(win.lineEditStack) == 2:
         name = win.lineEditStack.pop()
-        length = get_float_value_from_lineEditStack()
+        length = get_distance_value_from_lineEditStack()
         wire = wp.makeWire()
         myFaceProfile = BRepBuilderAPI_MakeFace(wire)
         if myFaceProfile.IsDone():
