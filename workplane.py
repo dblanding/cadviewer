@@ -148,7 +148,7 @@ def line_circ_inters(line, circle):
     xb2 = x0 + 2*r
     yb2 = y0 + 2*r
     box = (xb1, yb1, xb2, yb2)
-    # deefine line segment to be intersection points of line with box 
+    # define line segment to be intersection points of line with box 
     p1, p2 = cline_box_intrsctn(line, box)
     x1, y1 = p1
     x2, y2 = p2
@@ -449,8 +449,8 @@ class WorkPlane(object):
         self.face = face
         self.size = size
         self.border = self.makeWpBorder(self.size)
-        self.clList = [] # List of c-lines with (a, b, c) coefficients
-        self.ccList = [] # List of c-circs with (pc, r) coefficients
+        self.clines = set() # set of c-lines with (a, b, c) coefficients
+        self.ccircs = set() # set of c-circs with (pc, r) coefficients
         self.edgeList = [] # List of profile lines type: <TopoDS_Edge>
         self.wire = None
         self.hvcl((0,0))    # Make H-V clines through origin
@@ -499,11 +499,11 @@ class WorkPlane(object):
     #=======================================================================
 
     def cline_gen(self, cline):
-        self.clList.append(cline)
+        self.clines.add(cline)
 
     def geom2dLines(self):
-        """Return self.clList as list of type: <Geom2d_Line>."""
-        return [Geom2d_Line(gp_Lin2d(*cline)) for cline in self.clList]
+        """Return self.clines as list of type: <Geom2d_Line>."""
+        return [Geom2d_Line(gp_Lin2d(*cline)) for cline in self.clines]
 
     def geomLineBldr(self, cline):
         """Convert native cline to type: <Geom_Line>."""
@@ -516,8 +516,8 @@ class WorkPlane(object):
         return Geom_Line(gpPnt, gpDir)
 
     def geomLines(self):
-        """Return self.clList as list of type: <Geom_Line>."""
-        return [self.geomLineBldr(cline) for cline in self.clList]
+        """Return self.clines as list of type: <Geom_Line>."""
+        return [self.geomLineBldr(cline) for cline in self.clines]
 
     def hcl(self, pnt=None):
         """Create horizontal construction line from a point (x,y)."""
@@ -571,8 +571,8 @@ class WorkPlane(object):
                         pointList.append((x,y))
 
         # find intersection points among ccircs
-        ccirc2dList = list(self.ccList)  # copy list
-        for i in range(len(self.ccList)):
+        ccirc2dList = list(self.ccircs)  # copy list
+        for i in range(len(self.ccircs)):
             circ0 = ccirc2dList.pop()
             for circ in ccirc2dList:
                 inters = circ_circ_inters(circ0, circ)
@@ -580,7 +580,7 @@ class WorkPlane(object):
                     pointList.append(point)
 
         # find intersection points among clines
-        clList = list(self.clList) # (copy) list of (a, b, c) 2d lines
+        clList = list(self.clines) # list of (a, b, c) 2d lines
         for i in range(len(clList)):
             line0 = clList.pop()
             for line in clList:
@@ -616,7 +616,7 @@ class WorkPlane(object):
         """Create a circle (constr or profile)"""
         circ = (cntr, rad)
         if constr:
-            self.ccList.append(circ)
+            self.ccircs.add(circ)
         else:
             edge = BRepBuilderAPI_MakeEdge(self.convert_circ_to_geomCirc(circ)).Edge()
             self.edgeList.append(edge)
@@ -630,9 +630,9 @@ class WorkPlane(object):
         return geomCirc
 
     def geomCircs(self):
-        """Return self.ccList as type Geom_Circles."""
+        """Return self.ccircs as type Geom_Circles."""
         return [self.convert_circ_to_geomCirc(circ)
-                for circ in self.ccList]
+                for circ in self.ccircs]
 
     def convert_circ_to_geom2dCirc(self, circ):
         (cx, cy), r = circ
@@ -640,9 +640,9 @@ class WorkPlane(object):
                                                gp_Dir2d(1, 0)), r))
 
     def geom2dCircs(self):
-        """Return self.ccList as type Geom2d_Circles."""
+        """Return self.ccircs as type Geom2d_Circles."""
         return [self.convert_circ_to_geom2dCirc(circ)
-                for circ in self.ccList]
+                for circ in self.ccircs]
 
     def rect(self, pnt1, pnt2):
         """Create a rectangle from two diagonally opposite corners."""
