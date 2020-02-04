@@ -106,7 +106,7 @@ def add_pt(p0, p1):
 def sub_pt(p0, p1):
     return (p0[0]-p1[0], p0[1]-p1[1])
 
-def line_circ_inters(x1, y1, x2, y2, xc, yc, r):
+def seg_circ_inters(x1, y1, x2, y2, xc, yc, r):
     '''Return list of intersection pts of line defined by pts x1,y1 and x2,y2
     and circle (cntr xc,yc and radius r).
     Uses algorithm from Paul Bourke's web page.'''
@@ -132,9 +132,34 @@ def line_circ_inters(x1, y1, x2, y2, xc, yc, r):
         intpnts.append(((x1 + u2*(x2-x1)), (y1 + u2*(y2-y1))))
     return intpnts
 
-def circ_circ_inters(x1, y1, r1, x2, y2, r2):
+def line_circ_inters(line, circle):
+    '''Return list of intersection pts of line and circle.
+
+    line defined by coeffs a, b, c, circle (cntr xc,yc and radius r)
+    Doesn't work right. It comes up with some extra points.'''
+    a, b, c = line
+    (xc, yc), r = circle
+    # first find pt on line closest to circle center
+    p0 = proj_pt_on_line(line, (xc, yc))
+    # define corners of box (4r x 4r) centered on p0
+    x0, y0 = p0
+    xb1 = x0 - 2*r
+    yb1 = y0 - 2*r
+    xb2 = x0 + 2*r
+    yb2 = y0 + 2*r
+    box = (xb1, yb1, xb2, yb2)
+    # deefine line segment to be intersection points of line with box 
+    p1, p2 = cline_box_intrsctn(line, box)
+    x1, y1 = p1
+    x2, y2 = p2
+    # find intersection points of segment and circle
+    return seg_circ_inters(x1, y1, x2, y2, xc, yc, r)
+
+def circ_circ_inters(circ1, circ2):
     '''Return list of intersection pts of 2 circles.
     Uses algorithm from Robert S. Wilson's web page.'''
+    (x1, y1), r1 = circ1
+    (x2, y2), r2 = circ2
     pts = []
     D = (x2-x1)**2 + (y2-y1)**2
     if not D:
@@ -276,7 +301,7 @@ def cr_from_3p(p1, p2, p3):
 def extendline(p0, p1, d):
     """Return point which lies on extension of line segment p0-p1,
     beyond p1 by distance d."""
-    pts = line_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
+    pts = seg_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
     if pts:
         return farther(p0, pts[0], pts[1])
     else:
@@ -285,7 +310,7 @@ def extendline(p0, p1, d):
 def shortenline(p0, p1, d):
     """Return point which lies on line segment p0-p1,
     short of p1 by distance d."""
-    pts = line_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
+    pts = seg_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
     if pts:
         return closer(p0, pts[0], pts[1])
     else:
@@ -546,18 +571,13 @@ class WorkPlane(object):
                         pointList.append((x,y))
 
         # find intersection points among ccircs
-        ccirc2dList = self.geom2dCircs()# (copy) list of Geom2d_ccircs
-        for i in range(len(ccirc2dList)):
+        ccirc2dList = list(self.ccList)  # copy list
+        for i in range(len(self.ccList)):
             circ0 = ccirc2dList.pop()
             for circ in ccirc2dList:
-                inters = Geom2dAPI_InterCurveCurve(circ0, circ)
-                if inters.NbPoints():
-                    for i in range(inters.NbPoints()):
-                        pnt2d = inters.Point(i+1)
-                        x = pnt2d.X()
-                        y = pnt2d.Y()
-                        if (x, y) not in pointList:
-                            pointList.append((x, y))
+                inters = circ_circ_inters(circ0, circ)
+                for point in inters:
+                    pointList.append(point)
 
         # find intersection points among clines
         clList = list(self.clList) # (copy) list of (a, b, c) 2d lines

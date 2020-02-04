@@ -415,7 +415,7 @@ def ccirc():
         wp = win.activeWp
         pnt = get_point_from_ptStack()
         rad = get_distance_value_from_lineEditStack()
-        wp.circ(pnt, rad, constr=True)
+        wp.circle(pnt, rad, constr=True)
         win.ptStack = []
         win.redraw()
     else:
