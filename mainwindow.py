@@ -243,10 +243,8 @@ class MainWindow(QMainWindow):
         self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
         self.treeView.expandItem(self.treeViewRoot)
         self.itemClicked = None   # TreeView item that has been mouse clicked
-        self.flag = False  # Normally False; for use as needed by other functions
         self.floatStack = []  # storage stack for floating point values
         self.xyPtStack = []  # storage stack for 2d points (x, y)
-        self.gpPtStack = []  # storage stack for type <gp_Pnt> points
         self.edgeStack = []  # storage stack for edge picks
         self.faceStack = []  # storage stack for face picks
         self.shapeStack = []  # storage stack for shape picks

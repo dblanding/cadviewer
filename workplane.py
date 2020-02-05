@@ -418,12 +418,6 @@ class WorkPlane(object):
             props = GProp_GProps()
             brepgprop_SurfaceProperties(face, props)
             origin = props.CentreOfMass()
-            '''
-            surface = BRep_Tool_Surface(face) # type: Handle_Geom_Surface
-            plane = Handle_Geom_Plane.DownCast(surface).GetObject() # type: Geom_Plane
-            gpPlane = plane.Pln() # type: gp_Pln
-            origin = gpPlane.Location() # type: gp_Pnt
-            '''
             uDir = face_normal(faceU)  # from OCCUtils.Construct module
             axis3 = gp_Ax3(origin, wDir, uDir)
             vDir = axis3.YDirection()
@@ -481,6 +475,12 @@ class WorkPlane(object):
             border = myFaceProfile.Face()
         return border  # TopoDS_Face
 
+    #=======================================================================
+    # Utility functions
+    #=======================================================================
+
+    def p2p_dist(self, p1, p2):
+        return p2p_dist(p1, p2)
 
     #=======================================================================
     # Construction Geometry
@@ -495,7 +495,6 @@ class WorkPlane(object):
     # To create an 'AIS_Circle', type 'Geom_Circle' is needed.
     # In order to find intersection points (x, y), 'Geom2d_Circle' is needed.
     # Methods are provided to generate all the various types needed.
-    #
     #=======================================================================
 
     def cline_gen(self, cline):
@@ -606,21 +605,21 @@ class WorkPlane(object):
         clList = list(self.clines) # list of (a, b, c) 2d lines
         print(f"Number of c-lines: {len(clList)}")
         print(clList)
+        newpoints = []  # new finite points
         for i in range(len(clList)):
             line0 = clList.pop()
             for line in clList:
                 P = intersection(line0, line)
-                if P:
-                    if not points:
-                        points.add(P) # first point
+                if P:  # P is not None
+                    if (not points and abs(P[0]) < INFINITY and\
+                        abs(P[1]) < INFINITY):
+                        points.add(P) # first point, (not at inf.)
                     else:
-                        newpoints = []  # could be 0, 1, or 2
-                        for pnt in points:
-                            if p2p_dist(P, pnt) < INFINITY:
-                                newpoints.append(P)
-                        for pnt in newpoints:
-                            if self.unique(pnt, points):
-                                points.add(pnt)
+                        if abs(P[0]) < INFINITY and abs(P[1]) < INFINITY:
+                            newpoints.append(P)
+        for pnt in newpoints:
+            if self.unique(pnt, points):
+                points.add(pnt)
 
         # convert 2d points to 3d
         print(f"Number of points: {len(points)}")

@@ -98,10 +98,8 @@ print('TOLERANCE = ', TOL)
 #############################################
         
 def wpBy3Pts(*args):
-    """
-    Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
-    direction from pt2 to pt3 sets uDir
-    """
+    """Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
+    Direction from pt2 to pt3 sets uDir."""
     print(f'args = {args}')
     if win.xyPtStack:
         # Finish
@@ -130,7 +128,7 @@ def wpBy3Pts(*args):
         
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     print(f'args = {args}')
-    add_vertex_to_ptStack(shapeList)
+    add_vertex_to_xyPtStack(shapeList)
     if (len(win.xyPtStack) == 1):
         statusText = "Now select point 2 (wp origin)."
         win.statusBar().showMessage(statusText)
@@ -141,8 +139,7 @@ def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
         wpBy3Pts()
 
 def wpOnFace(*args):
-    """ First face defines plane of wp. Second face defines uDir.
-    """
+    """ First face defines plane of wp. Second face defines uDir."""
     if not win.faceStack:
         win.registerCallback(wpOnFaceC)
         display.selected_shape = None
@@ -193,12 +190,8 @@ def add_vertex_to_xyPtStack(shapeList):
     """Helper function to convert vertex to gp_Pnt and put on ptStack."""
     wp = win.activeWp
     for shape in shapeList:
-        # isinstance test was added to prevent program crashing as a result
-        # of unwanted face selections while using LMB to rotate display.
-        # Apparently, a registered callback function will get sent various
-        # events and selections in addition to the ones it wants.
         print(f"Selected item is type: {shape}")
-        if isinstance(shape, TopoDS_Vertex):
+        if isinstance(shape, TopoDS_Vertex):  # Guard against wrong type
             vrtx = topods_Vertex(shape)
             pnt = BRep_Tool.Pnt(vrtx) # convert vertex to type <gp_Pnt>
             trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
@@ -208,14 +201,14 @@ def add_vertex_to_xyPtStack(shapeList):
         else:
             print(f"(Unwanted) shape type: {type(shape)}")
 
-def processLineEditStack():
+def processLineEdit():
     """pop value from lineEditStack and place on floatStack or ptStack."""
 
     text = win.lineEditStack.pop()
     if ',' in text:
         try:
             xstr , ystr = text.split(',')
-            p = (float(xstr), float(ystr))
+            p = (float(xstr) * win.unitscale, float(ystr) * win.unitscale)
             win.xyPtStack.append(p)
         except :
             print("Problem with processing line edit stack")
@@ -226,55 +219,11 @@ def processLineEditStack():
             print(f"{e}")
     
 
-def get_distance_value_from_lineEditStack():
-    """Helper function to get distance(accounting for win.unitscale)"""
-    text = win.lineEditStack.pop()
-    try:
-        value = float(text) * win.unitscale
-    except ValueError:
-        print("Value entered must be a valid floating point number.")
-        win.clearCallback()
-        return None
-    return value
-
-def get_point_from_lineEditStack():
-    """Helper function to find two comma separated (x, y) values."""
-    try:
-        strx, stry = win.lineEditStack.pop().split(',')
-        x = float(strx) * win.unitscale
-        y = float(stry) * win.unitscale
-        pt2d = (x,y)  # 2d point
-    except ValueError:
-        print("Value entered must be two numbers separated by a comma.")
-        win.clearCallback()
-        return None
-    return pt2d
-
-def get_point_from_xyPtStack():
-    return win.xyPtStack.pop()
-
-def get_point_from_gpPtStack():
-    """Pop 3d point from ptStack and convert to 2d point on activeWp."""
-    wp = win.activeWp
-    pnt = win.gpPtStack.pop()
-    trsf = wp.Trsf.Inverted()  # New transform. Don't invert wp.Trsf
-    pnt.Transform(trsf)
-    pt2d = (pnt.X(), pnt.Y())  # 2d point
-    return pt2d
-
 def clineH():   # Horizontal construction line
-    if (win.xyPtStack or win.floatStack):
+    if win.xyPtStack:
         wp = win.activeWp
-        if win.xyPtStack:
-            p = get_point_from_xyPtStack()
-        else:
-            text = lineEditStack.pop()
-            if ',' in text:
-                xstr , ystr = text.split(',')
-                p = (float(xstr), float(ystr))
-            else:
-                p = (0.0, float(text))
-
+        p = win.xyPtStack.pop()
+        win.xyPtStack = []
         wp.hcl(p)
         win.redraw()
     else:
@@ -287,30 +236,22 @@ def clineH():   # Horizontal construction line
         win.statusBar().showMessage(statusText)
 
 def clineHC(shapeList, *args):  # callback (collector) for clineH
-    add_vertex_to_ptStack(shapeList)
+    add_vertex_to_xyPtStack(shapeList)
     if win.lineEditStack:
-        processLineEditStack()
+        processLineEdit()
     if win.floatStack:
-        y = win.floatStack.pop()
+        y = win.floatStack.pop() * win.unitscale
         pnt = (0, y)
         win.xyPtStack.append(pnt)
     if win.xyPtStack:
         clineH()
 
 def clineV():   # Vertical construction line
-    if (win.xyPtStack or win.floatStack):
+    if win.xyPtStack:
         wp = win.activeWp
-        if win.xyPtStack:
-            p = get_point_from_xyPtStack()
-        else:
-            text = lineEditStack.pop()
-            if ',' in text:
-                xstr , ystr = text.split(',')
-                p = (float(xstr), float(ystr))
-            else:
-                p = (float(text), 0.0)
-
-        wp.hcl(p)
+        p = win.xyPtStack.pop()
+        win.xyPtStack = []
+        wp.vcl(p)
         win.redraw()
     else:
         win.registerCallback(clineVC)
@@ -322,27 +263,22 @@ def clineV():   # Vertical construction line
         win.statusBar().showMessage(statusText)
 
 def clineVC(shapeList, *args):  # callback (collector) for clineV
-    add_vertex_to_ptStack(shapeList)
+    add_vertex_to_xyPtStack(shapeList)
     if win.lineEditStack:
-        processLineEditStack()
+        processLineEdit()
     if win.floatStack:
-        x = win.floatStack.pop()
+        x = win.floatStack.pop() * win.unitscale
         pnt = (x, 0)
         win.xyPtStack.append(pnt)
     if win.xyPtStack:
         clineV()
 
 def clineHV():   # Horizontal + Vertical construction lines
-    if (win.lineEditStack or win.xyPtStack):
+    if win.xyPtStack:
         wp = win.activeWp
-        if win.xyPtStack:
-            p = get_point_from_xyPtStack()
-        else:
-            p = get_point_from_lineEditStack()
-            if p is None:
-                return
-        wp.hvcl(p)
+        p = win.xyPtStack.pop()
         win.xyPtStack = []
+        wp.hvcl(p)
         win.redraw()
     else:
         win.registerCallback(clineHVC)
@@ -355,14 +291,16 @@ def clineHV():   # Horizontal + Vertical construction lines
 
 def clineHVC(shapeList, *args):  # callback (collector) for clineHV
     add_vertex_to_xyPtStack(shapeList)
-    if (win.xyPtStack or win.lineEditStack):
+    if win.lineEditStack:
+        processLineEdit()
+    if win.xyPtStack:
         clineHV()
 
 def cline2Pts():
     if len(win.xyPtStack) == 2:
         wp = win.activeWp
-        p2 = get_point_from_xyPtStack()
-        p1 = get_point_from_xyPtStack()
+        p2 = win.xyPtStack.pop()
+        p1 = win.xyPtStack.pop()
         wp.acl(p1, p2)
         win.xyPtStack = []
         win.redraw()
@@ -370,30 +308,24 @@ def cline2Pts():
         win.registerCallback(cline2PtsC)
         display.SetSelectionModeVertex()
         win.xyPtStack = []
+        win.clearLEStack()
+        win.lineEdit.setFocus()
         statusText = "Select 2 points for Construction Line."
         win.statusBar().showMessage(statusText)
 
 def cline2PtsC(shapeList, *args):  # callback (collector) for cline2Pts
     add_vertex_to_xyPtStack(shapeList)
+    if win.lineEditStack:
+        processLineEdit()
     if len(win.xyPtStack) == 2:
         cline2Pts()
 
 def clineAng():
-    if (win.xyPtStack and win.lineEditStack):
+    if (win.xyPtStack and win.floatStack):
         wp = win.activeWp
-        text = win.lineEditStack.pop()
+        text = win.floatStack.pop()
         angle = float(text)
-        pnt = get_point_from_xyPtStack()
-        wp.acl(pnt, ang=angle)
-        win.xyPtStack = []
-        win.redraw()
-    elif len(win.lineEditStack) == 2:
-        wp = win.activeWp
-        angtext = win.lineEditStack.pop()
-        angle = float(angtext)
-        pnt = get_point_from_lineEditStack()
-        if pnt is None:
-            return
+        pnt = win.xyPtStack.pop()
         wp.acl(pnt, ang=angle)
         win.xyPtStack = []
         win.redraw()
@@ -410,9 +342,9 @@ def clineAng():
 def clineAngC(shapeList, *args):  # callback (collector) for clineAng
     add_vertex_to_xyPtStack(shapeList)
     win.lineEdit.setFocus()
-    if (win.xyPtStack and win.lineEditStack):
-        clineAng()
-    if len(win.lineEditStack) == 2:
+    if win.lineEditStack:
+        processLineEdit()
+    if (win.xyPtStack and win.floatStack):
         clineAng()
 
 def clineRefAng():
@@ -424,8 +356,8 @@ def clineAngBisec():
 def clineLinBisec():
     if len(win.xyPtStack) == 2:
         wp = win.activeWp
-        pnt2 = get_point_from_xyPtStack()
-        pnt1 = get_point_from_xyPtStack()
+        pnt2 = win.xyPtStack.pop()
+        pnt1 = win.xyPtStack.pop()
         wp.lbcl(pnt1, pnt2)
         win.xyPtStack = []
         win.redraw()
@@ -451,18 +383,29 @@ def clineTan2():
     pass
 
 def ccirc():
-    """Create a construction circle from center and radius."""
-    if (win.xyPtStack and win.lineEditStack):
-        wp = win.activeWp
-        pnt = get_point_from_xyPtStack()
-        rad = get_distance_value_from_lineEditStack()
+    """Create a c-circle from center & radius or center & Pnt on circle."""
+    wp = win.activeWp
+    if len(win.xyPtStack) == 2:
+        p2 = win.xyPtStack.pop()
+        p1 = win.xyPtStack.pop()
+        rad = wp.p2p_dist(p1, p2)
+        wp.circle(p1, rad, constr=True)
+        win.xyPtStack = []
+        win.floatStack = []
+        win.redraw()
+    elif (win.xyPtStack and win.floatStack):
+        pnt = win.xyPtStack.pop()
+        rad = win.floatStack.pop() * win.unitscale
         wp.circle(pnt, rad, constr=True)
         win.xyPtStack = []
+        win.floatStack = []
         win.redraw()
     else:
         win.registerCallback(ccircC)
         display.SetSelectionModeVertex()
         win.xyPtStack = []
+        win.floatStack = []
+        win.lineEditStack = []
         win.lineEdit.setFocus()
         statusText = "Pick center of construction circle and enter radius."
         win.statusBar().showMessage(statusText)
@@ -471,7 +414,11 @@ def ccircC(shapeList, *args):
     """callback (collector) for ccirc"""
     add_vertex_to_xyPtStack(shapeList)
     win.lineEdit.setFocus()
-    if (win.xyPtStack and win.lineEditStack):
+    if win.lineEditStack:
+        processLineEdit()
+    if len(win.xyPtStack) == 2:
+        ccirc()
+    if (win.xyPtStack and win.floatStack):
         ccirc()
 
 #############################################
@@ -484,8 +431,8 @@ def rect():
     """Create a profile geometry rectangle from two diagonally opposite corners."""
     if len(win.xyPtStack) == 2:
         wp = win.activeWp
-        pnt2 = get_point_from_xyPtStack()
-        pnt1 = get_point_from_xyPtStack()
+        pnt2 = win.xyPtStack.pop()
+        pnt1 = win.xyPtStack.pop()
         wp.rect(pnt1, pnt2)
         win.xyPtStack = []
         win.redraw()
@@ -493,37 +440,56 @@ def rect():
         win.registerCallback(rectC)
         display.SetSelectionModeVertex()
         win.xyPtStack = []
+        win.lineEdit.setFocus()
         statusText = "Select 2 points for Rectangle."
         win.statusBar().showMessage(statusText)
 
 def rectC(shapeList, *args):
     """callback (collector) for rect"""
     add_vertex_to_xyPtStack(shapeList)
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        processLineEdit()
     if len(win.xyPtStack) == 2:
         rect()
 
 def circle():
-    """Create a profile geoometry circle from center and radius."""
-    if (win.xyPtStack and win.lineEditStack):
-        wp = win.activeWp
-        pnt = get_point_from_xyPtStack()
-        rad = get_distance_value_from_lineEditStack()
-        wp.circle(pnt, rad)
+    """Create a geometry circle from cntr & rad or cntr & pnt on circle."""
+    wp = win.activeWp
+    if len(win.xyPtStack) == 2:
+        p2 = win.xyPtStack.pop()
+        p1 = win.xyPtStack.pop()
+        rad = wp.p2p_dist(p1, p2)
+        wp.circle(p1, rad, constr=False)
         win.xyPtStack = []
+        win.floatStack = []
+        win.redraw()
+    elif (win.xyPtStack and win.floatStack):
+        pnt = win.xyPtStack.pop()
+        rad = win.floatStack.pop() * win.unitscale
+        wp.circle(pnt, rad, constr=False)
+        win.xyPtStack = []
+        win.floatStack = []
         win.redraw()
     else:
         win.registerCallback(circleC)
         display.SetSelectionModeVertex()
         win.xyPtStack = []
+        win.floatStack = []
+        win.lineEditStack = []
         win.lineEdit.setFocus()
-        statusText = "Pick center of circle and enter radius."
+        statusText = "Pick center and enter radius or pick center & 2nd point."
         win.statusBar().showMessage(statusText)
-        
+
 def circleC(shapeList, *args):
     """callback (collector) for circle"""
     add_vertex_to_xyPtStack(shapeList)
     win.lineEdit.setFocus()
-    if (win.xyPtStack and win.lineEditStack):
+    if win.lineEditStack:
+        processLineEdit()
+    if len(win.xyPtStack) == 2:
+        circle()
+    if (win.xyPtStack and win.floatStack):
         circle()
 
 def geom():
@@ -552,7 +518,7 @@ def extrude():
     wp = win.activeWp
     if len(win.lineEditStack) == 2:
         name = win.lineEditStack.pop()
-        length = get_distance_value_from_lineEditStack()
+        length = float(win.lineEditStack.pop()) * win.unitscale
         wire = wp.makeWire()
         myFaceProfile = BRepBuilderAPI_MakeFace(wire)
         if myFaceProfile.IsDone():
@@ -600,7 +566,7 @@ def rotateAP():
 def fillet(event=None):
     if (win.lineEditStack and win.edgeStack):
         text = win.lineEditStack.pop()
-        filletR = float(text)
+        filletR = float(text) * win.unitscale
         edges = []
         for edge in win.edgeStack:
             edges.append(edge)
@@ -639,7 +605,7 @@ def shell(event=None):
         win.faceStack = []
         workPart = win.activePart
         wrkPrtUID = win.activePartUID
-        shellT = float(text)
+        shellT = float(text) * win.unitscale
         newPart = BRepOffsetAPI_MakeThickSolid(workPart, faces, -shellT, 1.e-3).Shape()
         win.getNewPartUID(newPart, ancestor=wrkPrtUID)
         win.statusBar().showMessage('Shell operation complete')
