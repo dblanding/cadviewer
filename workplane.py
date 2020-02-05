@@ -641,6 +641,19 @@ class WorkPlane(object):
     # to extrude or cut a solid body.
     #=======================================================================
 
+    def line(self, pnt1, pnt2):
+        """Create a line between two end points."""
+        # Two 2d end points
+        x1, y1 = pnt1
+        x2, y2 = pnt2
+        p1 = gp_Pnt(x1, y1, 0).Transformed(self.Trsf)
+        p2 = gp_Pnt(x2, y2, 0).Transformed(self.Trsf)
+        seg = GC_MakeSegment(p1, p2).Value()  # Geom_TrimmedCurve
+        # Build the edge
+        edge = BRepBuilderAPI_MakeEdge(seg).Edge()  # TopoDS_Edge
+        self.edgeList.append(edge)
+
+
     def rect(self, pnt1, pnt2):
         """Create a rectangle from two diagonally opposite corners."""
         # 2 diagonally opposite corners

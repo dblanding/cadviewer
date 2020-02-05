@@ -427,6 +427,32 @@ def ccircC(shapeList, *args):
 #
 #############################################
 
+def line():
+    """Create a profile geometry line between two end points."""
+    if len(win.xyPtStack) == 2:
+        wp = win.activeWp
+        pnt2 = win.xyPtStack.pop()
+        pnt1 = win.xyPtStack.pop()
+        wp.line(pnt1, pnt2)
+        win.xyPtStack = []
+        win.redraw()
+    else:
+        win.registerCallback(lineC)
+        display.SetSelectionModeVertex()
+        win.xyPtStack = []
+        win.lineEdit.setFocus()
+        statusText = "Select 2 end points for line."
+        win.statusBar().showMessage(statusText)
+
+def lineC(shapeList, *args):
+    """callback (collector) for line"""
+    add_vertex_to_xyPtStack(shapeList)
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        processLineEdit()
+    if len(win.xyPtStack) == 2:
+        line()
+
 def rect():
     """Create a profile geometry rectangle from two diagonally opposite corners."""
     if len(win.xyPtStack) == 2:
@@ -887,31 +913,38 @@ if __name__ == '__main__':
     selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
     win.popMenu.addAction('Clear Callback', win.clearCallback)
     # Toolbar buttons
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/tpcl.gif')), 'By 2 Pnts', cline2Pts)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angle', clineAng)
-    #win.wpToolBar.addAction(QIcon(QPixmap('icons/refangcl.gif')), 'Ref-Ang', clineRefAng)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/abcl.gif')), 'Angular Bisector', clineAngBisec)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/lbcl.gif')), 'Linear Bisector', clineLinBisec)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/parcl.gif')), 'Parallel', clinePara)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/perpcl.gif')), 'Perpendicular', clinePerp)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan1.gif')), 'Tangent to circle', clineTan1)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cltan2.gif')), 'Tangent 2 circles', clineTan2)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/ccirc.gif')), 'Circle', ccirc)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cc3p.gif')), 'Circle by 3Pts', ccirc)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cccirc.gif')), 'Concentric Circle', ccirc)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
-    win.wpToolBar.addSeparator()
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', circle)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', arcc2p)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', arc3p)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/tpcl.gif')), 'By 2 Pnts', cline2Pts)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angle', clineAng)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/refangcl.gif')), 'Ref-Ang', clineRefAng)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/abcl.gif')), 'Angular Bisector', clineAngBisec)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/lbcl.gif')), 'Linear Bisector', clineLinBisec)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/parcl.gif')), 'Parallel', clinePara)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/perpcl.gif')), 'Perpendicular', clinePerp)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cltan1.gif')), 'Tangent to circle', clineTan1)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cltan2.gif')), 'Tangent 2 circles', clineTan2)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/ccirc.gif')), 'Circle', ccirc)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cc3p.gif')), 'Circle by 3Pts', ccirc)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cccirc.gif')), 'Concentric Circle', ccirc)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
+    win.wcToolBar.addSeparator()
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/del_c.gif')), 'Delete Constr', geom)
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/del_el.gif')), 'Delete Constr', geom)
+
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', line)
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', circle)
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', arcc2p)
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', arc3p)
+    win.wgToolBar.addSeparator()
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/translate.gif')), 'Translate Profile', geom)
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/rotate.gif')), 'Rotate Profile', geom)
+    #win.wgToolBar.addAction(QIcon(QPixmap('icons/del_g.gif')), 'Delete Profile', geom)
 
     win.raise_() # bring the app to the top
     app.exec_()
