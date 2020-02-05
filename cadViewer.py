@@ -492,6 +492,38 @@ def circleC(shapeList, *args):
     if (win.xyPtStack and win.floatStack):
         circle()
 
+def arcc2p():
+    """Create an arc from center pt, start pt and end pt."""
+    wp = win.activeWp
+    if len(win.xyPtStack) == 3:
+        pe = win.xyPtStack.pop()
+        ps = win.xyPtStack.pop()
+        pc = win.xyPtStack.pop()
+        wp.arcc2p(pc, ps, pe)
+        win.xyPtStack = []
+        win.floatStack = []
+        win.redraw()
+    else:
+        win.registerCallback(arcc2pC)
+        display.SetSelectionModeVertex()
+        win.xyPtStack = []
+        statusText = "Pick center of arc, then start then end point."
+        win.statusBar().showMessage(statusText)
+
+
+def arcc2pC(shapeList, *args):
+    """callback (collector) for circle"""
+    add_vertex_to_xyPtStack(shapeList)
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        processLineEdit()
+    if len(win.xyPtStack) == 3:
+        arcc2p()
+
+def arc3p():
+    """Create an arc from start pt, end pt, and 3rd pt on the arc."""
+    pass
+
 def geom():
     pass
 
@@ -878,8 +910,8 @@ if __name__ == '__main__':
     win.wpToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
     win.wpToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', circle)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', geom)
-    win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', geom)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', arcc2p)
+    win.wpToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', arc3p)
 
     win.raise_() # bring the app to the top
     app.exec_()

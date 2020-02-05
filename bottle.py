@@ -252,7 +252,7 @@ def makePoints():
 def makeLines():
     global aEdge1, aEdge2, aEdge3
     # Make type 'Geom_TrimmedCurve' from type 'gp_Pnt'
-    aArcOfCircle = GC_MakeArcOfCircle(aPnt2,aPnt3 ,aPnt4)
+    aArcOfCircle = GC_MakeArcOfCircle(aPnt2, aPnt3 ,aPnt4)
     aSegment1 = GC_MakeSegment(aPnt1 , aPnt2)
     aSegment2 = GC_MakeSegment(aPnt4 , aPnt5)
     # Make type 'TopoDS_Edge' from type 'Geom_TrimmedCurve'

@@ -641,39 +641,6 @@ class WorkPlane(object):
     # to extrude or cut a solid body.
     #=======================================================================
 
-    def circle(self, cntr, rad, constr=False):
-        """Create a circle (constr or profile)"""
-        circ = (cntr, rad)
-        if constr:
-            self.ccircs.add(circ)
-            self.hvcl(cntr)
-        else:
-            edge = BRepBuilderAPI_MakeEdge(self.convert_circ_to_geomCirc(circ)).Edge()
-            self.edgeList.append(edge)
-
-    def convert_circ_to_geomCirc(self, circ):
-        (cx, cy), rad = circ
-        cntrPt = gp_Pnt(cx, cy, 0)
-        ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
-        geomCirc = Geom_Circle(ax2, rad)
-        geomCirc.Transform(self.Trsf)
-        return geomCirc
-
-    def geomCircs(self):
-        """Return self.ccircs as type Geom_Circles."""
-        return [self.convert_circ_to_geomCirc(circ)
-                for circ in self.ccircs]
-
-    def convert_circ_to_geom2dCirc(self, circ):
-        (cx, cy), r = circ
-        return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy),
-                                               gp_Dir2d(1, 0)), r))
-
-    def geom2dCircs(self):
-        """Return self.ccircs as type Geom2d_Circles."""
-        return [self.convert_circ_to_geom2dCirc(circ)
-                for circ in self.ccircs]
-
     def rect(self, pnt1, pnt2):
         """Create a rectangle from two diagonally opposite corners."""
         # 2 diagonally opposite corners
@@ -697,6 +664,56 @@ class WorkPlane(object):
         edges = (e1, e2, e3, e4)
         for edge in edges:
             self.edgeList.append(edge)
+
+    def circle(self, cntr, rad, constr=False):
+        """Create a circle (constr or profile)"""
+        circ = (cntr, rad)
+        if constr:
+            self.ccircs.add(circ)
+            self.hvcl(cntr)
+        else:
+            edge = BRepBuilderAPI_MakeEdge(self.convert_circ_to_geomCirc(circ)).Edge()
+            self.edgeList.append(edge)
+
+    def convert_circ_to_geomCirc(self, circ):
+        """Convert 2d circle ((cx, cy), r) to type <Geom_Circle>"""
+        (cx, cy), rad = circ
+        cntrPt = gp_Pnt(cx, cy, 0)
+        ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
+        geomCirc = Geom_Circle(ax2, rad)
+        geomCirc.Transform(self.Trsf)
+        return geomCirc
+
+    def geomCircs(self):
+        """Return self.ccircs as type Geom_Circles."""
+        return [self.convert_circ_to_geomCirc(circ)
+                for circ in self.ccircs]
+
+    def convert_circ_to_geom2dCirc(self, circ):
+        (cx, cy), r = circ
+        return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy),
+                                               gp_Dir2d(1, 0)), r))
+
+    def geom2dCircs(self):
+        """Return self.ccircs as type Geom2d_Circles."""
+        return [self.convert_circ_to_geom2dCirc(circ)
+                for circ in self.ccircs]
+
+    def arcc2p(self, pc, ps, pe):
+        """Create an arc from center pt, start pt and end pt."""
+        rad = p2p_dist(pc, ps)
+        circ2d = (pc, rad)
+        geom_circ = self.convert_circ_to_geomCirc(circ2d)
+        gp_circ = geom_circ.Circ()
+        gp_ps = gp_Pnt(ps[0], ps[1], 0).Transformed(self.Trsf)
+        gp_pe = gp_Pnt(pe[0], pe[1], 0).Transformed(self.Trsf)
+        geom_arc = GC_MakeArcOfCircle(gp_circ, gp_ps, gp_pe, True).Value()
+        edge = BRepBuilderAPI_MakeEdge(geom_arc).Edge()
+        self.edgeList.append(edge)
+
+    def arc3p(self, ps, pe, p3):
+        """Create an arc from start pt, end pt, and 3rd pt on the arc."""
+        pass
 
     #=======================================================================
     # Topo_DS_Wire
