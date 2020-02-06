@@ -623,12 +623,14 @@ class MainWindow(QMainWindow):
                 clClr = Quantity_Color(Quantity_NOC_MAGENTA1)
                 for cline in wp.geomLines():
                     aisline = AIS_Line(cline)
+                    aisline.SetOwner(cline)
                     drawer = aisline.Attributes()
                     # asp parameters: (color, type, width)
                     asp = Prs3d_LineAspect(clClr, 2, 1.0)
                     drawer.SetLineAspect(asp)
                     aisline.SetAttributes(drawer)
-                    context.Display(aisline, False)
+                    context.Display(aisline, False)  # (see comment below)
+                    # 'False' above enables 'context' mode display & selection
                 pntlist = wp.intersectPts()
                 for point in pntlist:
                     self.canva._display.DisplayShape(point)
@@ -639,8 +641,8 @@ class MainWindow(QMainWindow):
                     asp = Prs3d_LineAspect(clClr, 2, 1.0)
                     drawer.SetLineAspect(asp)
                     aiscirc.SetAttributes(drawer)
-                    context.Display(aiscirc, False)
-                    # self.canva._display.DisplayShape(ccirc, color=clClr)
+                    context.Display(aiscirc, False)  # (see comment below)
+                    # 'False' above enables 'context' mode display & selection
                 for edge in wp.edgeList:
                     self.canva._display.DisplayShape(edge, color="WHITE")
                 self.canva._display.Repaint()

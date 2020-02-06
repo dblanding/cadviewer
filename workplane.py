@@ -476,7 +476,7 @@ class WorkPlane(object):
         return border  # TopoDS_Face
 
     #=======================================================================
-    # Utility functions
+    # Utility functions (Relayed)
     #=======================================================================
 
     def p2p_dist(self, p1, p2):

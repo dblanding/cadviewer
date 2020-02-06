@@ -35,7 +35,7 @@ import bottle
 from mainwindow import MainWindow, TreeView
 from PyQt5.QtWidgets import QApplication, QMenu
 from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from OCC.Core.AIS import AIS_Shape
+from OCC.Core.AIS import AIS_Shape, AIS_InteractiveContext
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
@@ -178,11 +178,7 @@ def makeWP():   # Default workplane located in X-Y plane at 0,0,0
 
 #############################################
 #
-# 2d Construction Line functions...
-# With these methods, SetSelectionModeVertex enables selection of vertexes
-# on parts, automatically projecting those onto the active Workplane.
-# To select intersection points on the wp, user should change to
-# SetSelectionModeShape.
+# Create 2d Construction Line functions...
 #
 #############################################
 
@@ -423,7 +419,7 @@ def ccircC(shapeList, *args):
 
 #############################################
 #
-# 2d Profile Geometry functions...
+# Create 2d Edge Profile functions...
 #
 #############################################
 
@@ -575,6 +571,56 @@ def arc3pC(shapeList, *args):
 
 def geom():
     pass
+
+#############################################
+#
+# 2D Delete functions...
+#
+#############################################
+
+def delCl():
+    """Delete selected 2d construction element.
+
+    Todo: Get this working. I'm able to select AIS_Lines but
+    haven't figured out how to get the cline or Geom_Line that
+    was used in their construction.
+    """
+    wp = win.activeWp
+    win.registerCallback(delClC)
+    win.xyPtStack = []
+    statusText = "Select a construction element to delete."
+    win.statusBar().showMessage(statusText)
+    display = win.canva._display.Context
+    print(display.NbSelected())  # Use shift-select to get multiple
+    print(display.FirstSelectedObject().GetOwner())
+    print(display.SelectedInteractive())
+
+def delClC(shapeList, *args):
+    """Callback (collector) for delCl"""
+    print(shapeList)
+    print(args)
+
+def delEl():
+    """Delete selected construction element."""
+    wp = win.activeWp
+    if win.shapeStack:
+        while win.shapeStack:
+            shape = win.shapeStack.pop()
+            if shape in wp.edgeList:
+                wp.edgeList.remove(shape)
+        win.redraw()
+    else:
+        win.registerCallback(delElC)
+        win.xyPtStack = []
+        statusText = "Select an element to delete."
+        win.statusBar().showMessage(statusText)
+
+def delElC(shapeList, *args):
+    """Callback (collector) for delEl"""
+    for shape in shapeList:
+        win.shapeStack.append(shape)
+    if win.shapeStack:
+        delEl()
 
 #############################################
 #
@@ -940,7 +986,7 @@ if __name__ == '__main__':
     win.wcToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
     win.wcToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
     win.wcToolBar.addAction(QIcon(QPixmap('icons/tpcl.gif')), 'By 2 Pnts', cline2Pts)
-    win.wcToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angle', clineAng)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/acl.gif')), 'Angled', clineAng)
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/refangcl.gif')), 'Ref-Ang', clineRefAng)
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/abcl.gif')), 'Angular Bisector', clineAngBisec)
     win.wcToolBar.addAction(QIcon(QPixmap('icons/lbcl.gif')), 'Linear Bisector', clineLinBisec)
@@ -954,8 +1000,7 @@ if __name__ == '__main__':
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
     win.wcToolBar.addSeparator()
-    #win.wcToolBar.addAction(QIcon(QPixmap('icons/del_c.gif')), 'Delete Constr', geom)
-    #win.wcToolBar.addAction(QIcon(QPixmap('icons/del_el.gif')), 'Delete Constr', geom)
+    win.wcToolBar.addAction(QIcon(QPixmap('icons/del_cel.gif')), 'Delete Constr', delCl)
 
     win.wgToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', line)
     win.wgToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
@@ -967,7 +1012,7 @@ if __name__ == '__main__':
     win.wgToolBar.addSeparator()
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/translate.gif')), 'Translate Profile', geom)
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/rotate.gif')), 'Rotate Profile', geom)
-    #win.wgToolBar.addAction(QIcon(QPixmap('icons/del_g.gif')), 'Delete Profile', geom)
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/del_el.gif')), 'Delete Edge Elem', delEl)
 
     win.raise_() # bring the app to the top
     app.exec_()
