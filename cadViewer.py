@@ -538,7 +538,7 @@ def arcc2p():
 
 
 def arcc2pC(shapeList, *args):
-    """callback (collector) for circle"""
+    """callback (collector) for arcc2p"""
     add_vertex_to_xyPtStack(shapeList)
     win.lineEdit.setFocus()
     if win.lineEditStack:
@@ -548,7 +548,30 @@ def arcc2pC(shapeList, *args):
 
 def arc3p():
     """Create an arc from start pt, end pt, and 3rd pt on the arc."""
-    pass
+    wp = win.activeWp
+    if len(win.xyPtStack) == 3:
+        ps = win.xyPtStack.pop()
+        pe = win.xyPtStack.pop()
+        p3 = win.xyPtStack.pop()
+        wp.arc3p(ps, pe, p3)
+        win.xyPtStack = []
+        win.floatStack = []
+        win.redraw()
+    else:
+        win.registerCallback(arc3pC)
+        display.SetSelectionModeVertex()
+        win.xyPtStack = []
+        statusText = "Pick start point on arc, then end then 3rd point on arc."
+        win.statusBar().showMessage(statusText)
+
+def arc3pC(shapeList, *args):
+    """Callback (collector) for arc3p"""
+    add_vertex_to_xyPtStack(shapeList)
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        processLineEdit()
+    if len(win.xyPtStack) == 3:
+        arc3p()
 
 def geom():
     pass
@@ -940,7 +963,7 @@ if __name__ == '__main__':
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/slot.gif')), 'Slot', geom)
     win.wgToolBar.addAction(QIcon(QPixmap('icons/circ.gif')), 'Circle', circle)
     win.wgToolBar.addAction(QIcon(QPixmap('icons/arcc2p.gif')), 'Arc Cntr-2Pts', arcc2p)
-    #win.wgToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', arc3p)
+    win.wgToolBar.addAction(QIcon(QPixmap('icons/arc3p.gif')), 'Arc by 3Pts', arc3p)
     win.wgToolBar.addSeparator()
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/translate.gif')), 'Translate Profile', geom)
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/rotate.gif')), 'Rotate Profile', geom)

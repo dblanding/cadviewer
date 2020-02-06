@@ -726,7 +726,12 @@ class WorkPlane(object):
 
     def arc3p(self, ps, pe, p3):
         """Create an arc from start pt, end pt, and 3rd pt on the arc."""
-        pass
+        gp_ps = gp_Pnt(ps[0], ps[1], 0).Transformed(self.Trsf)
+        gp_pe = gp_Pnt(pe[0], pe[1], 0).Transformed(self.Trsf)
+        gp_p3 = gp_Pnt(p3[0], p3[1], 0).Transformed(self.Trsf)
+        geom_arc = GC_MakeArcOfCircle(gp_ps, gp_pe, gp_p3).Value()
+        edge = BRepBuilderAPI_MakeEdge(geom_arc).Edge()
+        self.edgeList.append(edge)
 
     #=======================================================================
     # Topo_DS_Wire
