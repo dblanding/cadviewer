@@ -696,12 +696,12 @@ class WorkPlane(object):
         geomCirc = Geom_Circle(ax2, rad)
         geomCirc.Transform(self.Trsf)
         return geomCirc
-
+    '''
     def geomCircs(self):
         """Return self.ccircs as type Geom_Circles."""
         return [self.convert_circ_to_geomCirc(circ)
                 for circ in self.ccircs]
-
+    '''
     def convert_circ_to_geom2dCirc(self, circ):
         (cx, cy), r = circ
         return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy),

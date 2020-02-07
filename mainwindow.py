@@ -621,9 +621,8 @@ class MainWindow(QMainWindow):
                 drawer = aisBorder.DynamicHilightAttributes()
                 context.HilightWithColor(aisBorder, drawer, True)
                 clClr = Quantity_Color(Quantity_NOC_MAGENTA1)
-                for cline in wp.geomLines():
-                    aisline = AIS_Line(cline)
-                    aisline.SetOwner(cline)
+                for cline in wp.clines:
+                    aisline = AIS_Line(wp.geomLineBldr(cline))
                     drawer = aisline.Attributes()
                     # asp parameters: (color, type, width)
                     asp = Prs3d_LineAspect(clClr, 2, 1.0)
@@ -634,8 +633,8 @@ class MainWindow(QMainWindow):
                 pntlist = wp.intersectPts()
                 for point in pntlist:
                     self.canva._display.DisplayShape(point)
-                for ccirc in wp.geomCircs():
-                    aiscirc = AIS_Circle(ccirc)
+                for ccirc in wp.ccircs:
+                    aiscirc = AIS_Circle(wp.convert_circ_to_geomCirc(ccirc))
                     drawer = aisline.Attributes()
                     # asp parameters: (color, type, width)
                     asp = Prs3d_LineAspect(clClr, 2, 1.0)

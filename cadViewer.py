@@ -591,9 +591,9 @@ def delCl():
     statusText = "Select a construction element to delete."
     win.statusBar().showMessage(statusText)
     display = win.canva._display.Context
-    print(display.NbSelected())  # Use shift-select to get multiple
-    print(display.FirstSelectedObject().GetOwner())
-    print(display.SelectedInteractive())
+    print(display.NbSelected())  # Use shift-select for multiple
+    if display.SelectedInteractive():
+        print(type(display.SelectedInteractive()))
 
 def delClC(shapeList, *args):
     """Callback (collector) for delCl"""
