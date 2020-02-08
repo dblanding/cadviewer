@@ -581,24 +581,25 @@ def geom():
 def delCl():
     """Delete selected 2d construction element.
 
-    Todo: Get this working. I'm able to select AIS_Lines but
-    haven't figured out how to get the cline or Geom_Line that
-    was used in their construction.
-    """
+    Todo: Get this working. Able to pre-select lines from the display
+    as type <AIS_InteractiveObject> but haven't figured out how to get
+    the type <AIS_Line> (or the cline or Geom_Line that was used to make
+    it)."""
     wp = win.activeWp
     win.registerCallback(delClC)
-    win.xyPtStack = []
     statusText = "Select a construction element to delete."
     win.statusBar().showMessage(statusText)
     display = win.canva._display.Context
-    print(display.NbSelected())  # Use shift-select for multiple
-    if display.SelectedInteractive():
-        print(type(display.SelectedInteractive()))
+    print(display.NbSelected())  # Use shift-select for multiple lines
+    selected_line = display.SelectedInteractive()
+    if selected_line:
+        print(type(selected_line))  # <AIS_InteractiveObject>
 
 def delClC(shapeList, *args):
     """Callback (collector) for delCl"""
     print(shapeList)
     print(args)
+    delCl()
 
 def delEl():
     """Delete selected construction element."""
@@ -640,13 +641,43 @@ def makeCyl():
     uid = win.getNewPartUID(myBody, name=name)
     win.redraw()
     
+def makeWire():
+    """Collect (up to 4) edges, make Wire, save to active wp."""
+    wp = win.activeWp
+    if win.lineEditStack:
+        _ = win.lineEditStack.pop()  # user trigger
+        edgelist = [edge for edge in win.shapeStack
+                    if isinstance(edge, TopoDS_Edge)]
+        win.shapeStack = []
+        if len(edgelist) > 4:
+            edgelist = edgelist[:4]
+        wp.wire = BRepBuilderAPI_MakeWire(*edgelist).Wire()
+        statusText = "Wire complete."
+        win.statusBar().showMessage(statusText)
+        win.clearCallback()
+    else:
+        win.registerCallback(makeWireC)
+        win.lineEdit.setFocus()
+        statusText = "Select up to 4 edges in a loop, then press enter."
+        win.statusBar().showMessage(statusText)
+
+def makeWireC(shapeList, *args):
+    for shape in shapeList:
+        win.shapeStack.append(shape)
+        win.lineEdit.setFocus()
+    if win.lineEditStack:
+        makeWire()
+
 def extrude():
     """Extrude profile on active WP to create a new part."""
     wp = win.activeWp
     if len(win.lineEditStack) == 2:
         name = win.lineEditStack.pop()
         length = float(win.lineEditStack.pop()) * win.unitscale
-        wire = wp.makeWire()
+        wire = wp.wire
+        if not wire:
+            print("Need 'makeWire' first.")
+            return
         myFaceProfile = BRepBuilderAPI_MakeFace(wire)
         if myFaceProfile.IsDone():
             bottomFace = myFaceProfile.Face()
@@ -722,6 +753,29 @@ def filletC(shapeList, *args):  # callback (collector) for fillet
         win.edgeStack.append(edge)
     if (win.edgeStack and win.lineEditStack):
         fillet()
+
+def fuse():
+    """Fuse two solid shapes together."""
+    if len(win.shapeStack):
+        shape = win.shapeStack.pop()
+        workpart = win.activePart
+        wrkPrtUID = win.activePartUID
+        newPart = BRepAlgoAPI_Fuse(workpart, shape).Shape()
+        win.getNewPartUID(newPart, ancestor=wrkPrtUID)
+        win.statusBar().showMessage('Fuse operation complete')
+        win.clearCallback()
+    else:
+        win.registerCallback(fuseC)
+        statusText = "Select shape to fuse to active part."
+        win.statusBar().showMessage(statusText)
+
+def fuseC(shapeList, *args):  # callback (collector) for fuse
+    print(shapeList)
+    print(args)
+    for shape in shapeList:
+        win.shapeStack.append(shape)
+    if win.shapeStack:
+        fuse()
 
 def shell(event=None):
     if (win.lineEditStack and win.faceStack):
@@ -923,11 +977,13 @@ if __name__ == '__main__':
     win.add_menu('Create 3D')
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
-    win.add_function_to_menu('Create 3D', "extrude", extrude)
+    win.add_function_to_menu('Create 3D', "Make Wire", makeWire)
+    win.add_function_to_menu('Create 3D', "Extrude", extrude)
     win.add_menu('Modify Active Part')
     win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
     win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
     win.add_function_to_menu('Modify Active Part', "Shell", shell)
+    win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
     # excised dynamic3Dmodification functions
     #win.add_function_to_menu('Modify Active Part', "Lift Face", lift)
     #win.add_function_to_menu('Modify Active Part', "Offset Face", offsetFace)
@@ -981,7 +1037,7 @@ if __name__ == '__main__':
     selectSubMenu.addAction('Shape', display.SetSelectionModeShape)    
     selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
     win.popMenu.addAction('Clear Callback', win.clearCallback)
-    # Toolbar buttons
+    # Construction Line Toolbar buttons
     win.wcToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
     win.wcToolBar.addAction(QIcon(QPixmap('icons/vcl.gif')), 'Vertical', clineV)
     win.wcToolBar.addAction(QIcon(QPixmap('icons/hvcl.gif')), 'H + V', clineHV)
@@ -1000,8 +1056,8 @@ if __name__ == '__main__':
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan2.gif')), 'Circ Tangent x2', ccirc)
     #win.wcToolBar.addAction(QIcon(QPixmap('icons/cctan3.gif')), 'Circ Tangent x3', ccirc)
     win.wcToolBar.addSeparator()
-    win.wcToolBar.addAction(QIcon(QPixmap('icons/del_cel.gif')), 'Delete Constr', delCl)
-
+    #win.wcToolBar.addAction(QIcon(QPixmap('icons/del_cel.gif')), 'Delete Constr', delCl)
+    # Profile Line Toolbar buttons
     win.wgToolBar.addAction(QIcon(QPixmap('icons/line.gif')), 'Line', line)
     win.wgToolBar.addAction(QIcon(QPixmap('icons/rect.gif')), 'Rectangle', rect)
     #win.wgToolBar.addAction(QIcon(QPixmap('icons/poly.gif')), 'Polygon', geom)
