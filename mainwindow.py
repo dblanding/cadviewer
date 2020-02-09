@@ -188,10 +188,10 @@ class MainWindow(QMainWindow):
         self.resize(960,720)
         self.setCentralWidget(self.canva)
         self.createDockWidget()
-        self.wcToolBar = QToolBar("2D")
+        self.wcToolBar = QToolBar("2D")  # Construction toolbar
         self.addToolBar(Qt.RightToolBarArea, self.wcToolBar)
         self.wcToolBar.setMovable(True)
-        self.wgToolBar = QToolBar("2D")
+        self.wgToolBar = QToolBar("2D")  # Geom Profile toolbar
         self.addToolBar(Qt.RightToolBarArea, self.wgToolBar)
         self.wgToolBar.setMovable(True)
         if sys.platform == 'darwin':
@@ -200,6 +200,14 @@ class MainWindow(QMainWindow):
         self._menus = {}
         self._menu_methods = {}
         self.centerOnScreen()
+
+        self.calculator = None
+
+        itemName = ['/', str(0)] # Root Item in TreeView
+        self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)
+        self.treeView.expandItem(self.treeViewRoot)
+        self.itemClicked = None   # TreeView item that has been mouse clicked
+
         # Internally, everything is always in mm
         # scale user input and output values
         # (user input values) * unitscale = value in mm
@@ -210,15 +218,17 @@ class MainWindow(QMainWindow):
         self.unitsLabel = QLabel()
         self.unitsLabel.setText("Units: %s " % self.units)
         #self.unitsLabel.setFrameStyle(QFrame.StyledPanel|QFrame.Sunken)
+
         self.endOpButton = QToolButton()
         self.endOpButton.setText('End Operation')
         self.endOpButton.clicked.connect(self.clearCallback)
         self.currOpLabel = QLabel()
         self.registeredCallback = None
         self.currOpLabel.setText("Current Operation: %s " % self.registeredCallback)
+
         self.lineEdit = QLineEdit()
-        self.lineEditStack = [] # list of user inputs
         self.lineEdit.returnPressed.connect(self.appendToStack)
+
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         status.addPermanentWidget(self.lineEdit)
@@ -226,32 +236,32 @@ class MainWindow(QMainWindow):
         status.addPermanentWidget(self.endOpButton)
         status.addPermanentWidget(self.unitsLabel)
         status.showMessage("Ready", 5000)
-        self.activeAsy = None # tree node object
+
+        self._currentUID = 0
+        self.drawList = []      # list of part uid's to be displayed
+        self.floatStack = []    # storage stack for floating point values
+        self.xyPtStack = []     # storage stack for 2d points (x, y)
+        self.edgeStack = []     # storage stack for edge picks
+        self.faceStack = []     # storage stack for face picks
+        self.shapeStack = []    # storage stack for shape picks
+        self.lineEditStack = [] # list of user inputs
+
+        self.activeAsy = None   # tree node object
         self.activeAsyUID = 0
-        self.activePart = None # OCCpartObject
+        self._assyDict = {}     # k = uid, v = Loc
+
+        self.activePart = None  # <TopoDS_Shape> object
         self.activePartUID = 0
-        self.activeWp = None # WorkPlane object
-        self.activeWpUID = 0
-        self._assyDict = {} # k = uid, v = Loc
-        self._partDict = {} # k = uid, v = OCCpartObject
-        self._wpDict = {} # k = uid, v = wpObject
-        self._nameDict = {} # k = uid, v = partName
+        self._partDict = {}     # k = uid, v = <ToopoDS_Shape> object
+        self._nameDict = {}     # k = uid, v = partName
         self._colorDict = {}    # k = uid, v = part display color
         self._transparencyDict = {}    # k = uid, v = part display transparency
         self._ancestorDict = {} # k = uid, v = ancestorUID
-        self._currentUID = 0
+
+        self.activeWp = None    # WorkPlane object
+        self.activeWpUID = 0
+        self._wpDict = {}       # k = uid, v = wpObject
         self._wpNmbr = 1
-        self.drawList = [] # list of part uid's to be displayed
-        itemName = ['/', str(0)]
-        self.treeViewRoot = QTreeWidgetItem(self.treeView, itemName)    # Root Item in TreeView
-        self.treeView.expandItem(self.treeViewRoot)
-        self.itemClicked = None   # TreeView item that has been mouse clicked
-        self.floatStack = []  # storage stack for floating point values
-        self.xyPtStack = []  # storage stack for 2d points (x, y)
-        self.edgeStack = []  # storage stack for edge picks
-        self.faceStack = []  # storage stack for face picks
-        self.shapeStack = []  # storage stack for shape picks
-        self.calculator = None
 
     def createDockWidget(self):
         self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
@@ -369,6 +379,7 @@ class MainWindow(QMainWindow):
             self.itemClicked = None
 
     def setItemActive(self, item):
+        """From tree view item, set (part, wp or assy) to be active."""
         if item:
             name = item.text(0)
             strUID = item.text(1)
@@ -376,35 +387,43 @@ class MainWindow(QMainWindow):
             print(f"Part selected: {name}, UID: {uid}")
             pd, ad, wd = self.sortViewItems()
             if uid in pd:
-                # Clear BG color of all part items
-                for itm in pd.values():
-                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
-                # Set BG color of new active part
-                item.setBackground(0, QBrush(QColor('pink')))
-                self.activePart = self._partDict[uid]
-                self.activePartUID = uid
+                self.setActivePart(uid)
                 sbText = "%s [uid=%i] is now the active part" % (name, uid)
                 self.redraw()
             elif uid in wd:
-                # Clear BG color of all wp items
-                for itm in wd.values():
-                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
-                # Set BG color of new active wp
-                item.setBackground(0, QBrush(QColor('lightgreen')))
+                self.showItemActive(uid)
                 self.activeWp = self._wpDict[uid]
                 self.activeWpUID = uid
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
                 self.redraw()
             elif uid in ad:
-                # Clear BG color of all asy items
-                for itm in ad.values():
-                    itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
-                # Set BG color of new active asy
-                item.setBackground(0, QBrush(QColor('lightblue')))
+                self.showItemActive(uid)
                 self.activeAsyUID = uid
                 self.activeAsy = item
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
             self.statusBar().showMessage(sbText, 5000)
+
+    def showItemActive(self, uid):
+        """Update tree view to show active status of (uid)."""
+        pd, ad, wd = self.sortViewItems()
+        if uid in pd:
+            # Clear BG color of all part items
+            for itm in pd.values():
+                itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+            # Set BG color of new active part
+            pd[uid].setBackground(0, QBrush(QColor('pink')))
+        elif uid in wd:
+            # Clear BG color of all wp items
+            for itm in wd.values():
+                itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+            # Set BG color of new active wp
+            wd[uid].setBackground(0, QBrush(QColor('lightgreen')))
+        elif uid in ad:
+            # Clear BG color of all asy items
+            for itm in ad.values():
+                itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
+            # Set BG color of new active asy
+            ad[uid].setBackground(0, QBrush(QColor('lightblue')))
 
     def setTransparent(self):
         item = self.itemClicked
@@ -497,29 +516,34 @@ class MainWindow(QMainWindow):
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
+            # add item to treeView
+            self.addItemToTreeView(name, uid)
             # Make new part active
-            self.activePartUID = uid
-            self.activePart = objct
+            self.setActivePart(uid)
         elif typ == 'a':
             self._assyDict[uid] = objct  # TopLoc_Location
+            # add item to treeView
+            self.addItemToTreeView(name, uid)
         elif typ == 'w':
             name = "wp%i" % self._wpNmbr
             self._wpNmbr += 1
             self._wpDict[uid] = objct # wpObject
+            # add item to treeView
+            self.addItemToTreeView(name, uid)
             self.activeWp = objct
             self.activeWpUID = uid
         self._nameDict[uid] = name
-        # add item to treeView
-        itemName = [name, str(uid)]
-        item = QTreeWidgetItem(self.treeViewRoot, itemName)
-        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-        item.setCheckState(0, Qt.Checked)
-        # show as active in treeView
-        # self.setActive(item)
         # Add new uid to draw list and sync w/ treeView
         self.drawList.append(uid)
         self.syncCheckedToDrawList()
         return uid
+
+    def addItemToTreeView(self, name, uid):
+        itemName = [name, str(uid)]
+        item = QTreeWidgetItem(self.treeViewRoot, itemName)
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(0, Qt.Checked)
+
 
     def appendToStack(self):  # called when <ret> is pressed on line edit
         self.lineEditStack.append(self.lineEdit.text())
@@ -529,6 +553,14 @@ class MainWindow(QMainWindow):
             cb([])  # call self.registeredCallback with arg=empty_list
         else:
             self.lineEditStack.pop()
+
+    def setActivePart(self, uid):
+        """Change active part status in coordinated manner."""
+        # modify status in self 
+        self.activePartUID = uid
+        self.activePart = self._partDict[uid]
+        # show as active in treeView
+        self.showItemActive(uid)
 
     def valueFromCalc(self, value):
         """Receive value from calculator."""
@@ -545,7 +577,7 @@ class MainWindow(QMainWindow):
     def clearAllStacks(self):
         self.lineEditStack = []
         self.floatStack = []
-        self.ptStack = []
+        self.xyPtStack = []
         self.edgeStack = []
         self.faceStack = []
         
@@ -622,7 +654,9 @@ class MainWindow(QMainWindow):
                 context.HilightWithColor(aisBorder, drawer, True)
                 clClr = Quantity_Color(Quantity_NOC_MAGENTA1)
                 for cline in wp.clines:
-                    aisline = AIS_Line(wp.geomLineBldr(cline))
+                    geomline = wp.geomLineBldr(cline)
+                    aisline = AIS_Line(geomline)
+                    aisline.SetOwner(geomline)
                     drawer = aisline.Attributes()
                     # asp parameters: (color, type, width)
                     asp = Prs3d_LineAspect(clClr, 2, 1.0)

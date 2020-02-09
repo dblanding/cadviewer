@@ -594,6 +594,7 @@ def delCl():
     selected_line = display.SelectedInteractive()
     if selected_line:
         print(type(selected_line))  # <AIS_InteractiveObject>
+        print(selected_line.GetOwner())  # <Standard_Transient>
 
 def delClC(shapeList, *args):
     """Callback (collector) for delCl"""
