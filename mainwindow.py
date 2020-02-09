@@ -246,10 +246,6 @@ class MainWindow(QMainWindow):
         self.shapeStack = []    # storage stack for shape picks
         self.lineEditStack = [] # list of user inputs
 
-        self.activeAsy = None   # tree node object
-        self.activeAsyUID = 0
-        self._assyDict = {}     # k = uid, v = Loc
-
         self.activePart = None  # <TopoDS_Shape> object
         self.activePartUID = 0
         self._partDict = {}     # k = uid, v = <ToopoDS_Shape> object
@@ -262,6 +258,11 @@ class MainWindow(QMainWindow):
         self.activeWpUID = 0
         self._wpDict = {}       # k = uid, v = wpObject
         self._wpNmbr = 1
+
+        self.activeAsy = self.treeViewRoot   # tree node object
+        self.activeAsyUID = 0
+        self._assyDict = {0, None}  # k = uid, v = Loc
+        self.showItemActive(0)
 
     def createDockWidget(self):
         self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
@@ -391,15 +392,11 @@ class MainWindow(QMainWindow):
                 sbText = "%s [uid=%i] is now the active part" % (name, uid)
                 self.redraw()
             elif uid in wd:
-                self.showItemActive(uid)
-                self.activeWp = self._wpDict[uid]
-                self.activeWpUID = uid
+                self.setActiveWp(uid)
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
                 self.redraw()
             elif uid in ad:
-                self.showItemActive(uid)
-                self.activeAsyUID = uid
-                self.activeAsy = item
+                self.setActiveAsy(uid)
                 sbText = "%s [uid=%i] is now the active workplane" % (name, uid)
             self.statusBar().showMessage(sbText, 5000)
 
@@ -524,14 +521,16 @@ class MainWindow(QMainWindow):
             self._assyDict[uid] = objct  # TopLoc_Location
             # add item to treeView
             self.addItemToTreeView(name, uid)
+            # Make new assembly active
+            self.setActiveAsy(uid)
         elif typ == 'w':
             name = "wp%i" % self._wpNmbr
             self._wpNmbr += 1
             self._wpDict[uid] = objct # wpObject
             # add item to treeView
             self.addItemToTreeView(name, uid)
-            self.activeWp = objct
-            self.activeWpUID = uid
+            # Make new workplane active
+            self.setActiveWp(uid)
         self._nameDict[uid] = name
         # Add new uid to draw list and sync w/ treeView
         self.drawList.append(uid)
@@ -559,6 +558,22 @@ class MainWindow(QMainWindow):
         # modify status in self 
         self.activePartUID = uid
         self.activePart = self._partDict[uid]
+        # show as active in treeView
+        self.showItemActive(uid)
+
+    def setActiveWp(self, uid):
+        """Change active workplane status in coordinated manner."""
+        # modify status in self 
+        self.activeWpUID = uid
+        self.activeWp = self._wpDict[uid]
+        # show as active in treeView
+        self.showItemActive(uid)
+
+    def setActiveAsy(self, uid):
+        """Change active assembly status in coordinated manner."""
+        # modify status in self 
+        self.activeAsyUID = uid
+        self.activeAsy = self._assyDict[uid]
         # show as active in treeView
         self.showItemActive(uid)
 
