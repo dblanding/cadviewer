@@ -241,6 +241,7 @@ class MainWindow(QMainWindow):
         self.drawList = []      # list of part uid's to be displayed
         self.floatStack = []    # storage stack for floating point values
         self.xyPtStack = []     # storage stack for 2d points (x, y)
+        self.ptStack = []       # used when measuring pt to pt dist
         self.edgeStack = []     # storage stack for edge picks
         self.faceStack = []     # storage stack for face picks
         self.shapeStack = []    # storage stack for shape picks
@@ -261,7 +262,8 @@ class MainWindow(QMainWindow):
 
         self.activeAsy = self.treeViewRoot   # tree node object
         self.activeAsyUID = 0
-        self._assyDict = {0, None}  # k = uid, v = Loc
+        self._assyDict = {}  # k = uid, v = Loc
+        self._assyDict[0] = None  # Root assembly has no location vector
         self.showItemActive(0)
 
     def createDockWidget(self):
@@ -408,7 +410,7 @@ class MainWindow(QMainWindow):
             for itm in pd.values():
                 itm.setBackground(0, QBrush(QColor(255, 255, 255, 0)))
             # Set BG color of new active part
-            pd[uid].setBackground(0, QBrush(QColor('pink')))
+            pd[uid].setBackground(0, QBrush(QColor('gold')))
         elif uid in wd:
             # Clear BG color of all wp items
             for itm in wd.values():
@@ -595,6 +597,7 @@ class MainWindow(QMainWindow):
         self.xyPtStack = []
         self.edgeStack = []
         self.faceStack = []
+        self.ptStack = []
         
     def registerCallback(self, callback):
         currCallback = self.registeredCallback

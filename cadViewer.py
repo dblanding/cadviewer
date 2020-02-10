@@ -33,7 +33,7 @@ import treelib
 import workplane
 import bottle
 from mainwindow import MainWindow, TreeView
-from PyQt5.QtWidgets import QApplication, QMenu
+from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
 from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
 from OCC.Core.AIS import AIS_Shape, AIS_InteractiveContext
 from OCC.Core.BRep import BRep_Tool
@@ -905,16 +905,18 @@ def printCurrUID():
     print(win._currentUID)
 
 def printActiveAsyInfo():
-    print(f"Name: {win.activeAsy}")
-    print(f"UID: {win.activeAsyUID}")
+    uid = win.activeAsyUID
+    treeNode = win.activeAsy
+    print(f"Active Assembly Name: {treeNode} \t UID: {uid}")
 
 def printActiveWpInfo():
     print(f"Name: {win.activeWp}")
     print(f"UID: {win.activeWpUID}")
 
 def printActivePartInfo():
-    print(f"Name: {win.activePart}")
-    print(f"UID: {win.activePartUID}")
+    uid = win.activePartUID
+    name = win._nameDict.get(uid)
+    print(f"Active Part Name: {name} \t UID: {uid}")
 
 def printPartsInActiveAssy():
     asyPrtTree = []
@@ -948,9 +950,6 @@ def printTreeView():
             pname = parent.text(0)
         print(f"UID: {uid}; Name: {name}; Parent: {pname}")
         iterator += 1
-
-def clearPntStack():
-    win.xyPtStack = []
 
 def printDrawList():
     print("Draw List:", win.drawList)
