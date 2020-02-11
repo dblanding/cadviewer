@@ -22,68 +22,31 @@
 #
 
 
-from itertools import islice
 import logging
 import math
-import os, os.path
 import sys
-import rpnCalculator
-import stepXD
-import treelib
-import workplane
-import bottle
-from mainwindow import MainWindow, TreeView
-from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
-from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from OCC.Core.AIS import AIS_Shape, AIS_InteractiveContext
+from OCC.Core.AIS import AIS_Shape
 from OCC.Core.BRep import BRep_Tool
-from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
-from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                     BRepBuilderAPI_MakeFace,
-                                     BRepBuilderAPI_MakeSolid,
-                                     BRepBuilderAPI_MakeWire,
-                                     BRepBuilderAPI_Sewing,
-                                     BRepBuilderAPI_Transform)
-from OCC.Core.BRepFill import brepfill
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
+                                     BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
 from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism,
-                                  BRepPrimAPI_MakeCylinder) 
+                                  BRepPrimAPI_MakeCylinder)
 from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
-from OCC.Core.CPnts import CPnts_AbscissaPoint_Length
-from OCC.Core.gp import (gp_Ax1, gp_Ax3, gp_Dir, gp_Lin, gp_Pln,
-                         gp_Pnt, gp_Trsf, gp_Vec)
-from OCC.Core.GC import GC_MakeSegment
-from OCC.Core.GeomAPI import GeomAPI_IntSS
-from OCC.Core.IFSelect import IFSelect_RetDone
-from OCC.Core.IntAna import IntAna_IntConicQuad
-from OCC.Core.Interface import Interface_Static_SetCVal
-from OCC.Core.Precision import precision_Angular, precision_Confusion
-from OCC.Core.Prs3d import Prs3d_Drawer
-from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
-from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
-from OCC.Core.TCollection import (TCollection_ExtendedString,
-                                  TCollection_AsciiString)
-from OCC.Core.TDataStd import TDataStd_Name
-from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
-from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+from OCC.Core.gp import gp_Ax1, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCC.Core.TopAbs import TopAbs_EDGE
 from OCC.Core.TopExp import TopExp_Explorer
-from OCC.Core.TopoDS import (topods, TopoDS_Wire, TopoDS_Vertex, TopoDS_Edge,
-                             TopoDS_Face, TopoDS_Shell, TopoDS_Solid,
-                             TopoDS_Compound, TopoDS_CompSolid, topods_Edge,
-                             topods_Face, topods_Shell, topods_Vertex,
-                             TopoDS_Iterator)
+from OCC.Core.TopoDS import (TopoDS_Vertex, TopoDS_Edge,
+                             topods_Edge, topods_Face, topods_Vertex)
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopTools import TopTools_ListOfShape
-from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
-                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
-                               Quantity_NOC_DARKGREEN)
-from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
-                              XCAFDoc_DocumentTool_ColorTool,
-                              XCAFDoc_DocumentTool_LayerTool,
-                              XCAFDoc_DocumentTool_MaterialTool,
-                              XCAFDoc_ColorSurf)
-from OCCUtils import Construct, Topology
+from OCCUtils import Topology
+from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
+from PyQt5.QtGui import QIcon, QPixmap
+import bottle
+from mainwindow import MainWindow
+import workplane
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
@@ -93,10 +56,10 @@ print('TOLERANCE = ', TOL)
 
 #############################################
 #
-# Workplane creation functions...
+# Workplane creation functions
 #
 #############################################
-        
+
 def wpBy3Pts(*args):
     """Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
     Direction from pt2 to pt3 sets uDir."""
@@ -125,17 +88,17 @@ def wpBy3Pts(*args):
         statusText = "Pick 3 points. Dir from pt1-pt2 sets wDir, pt2 is origin."
         win.statusBar().showMessage(statusText)
         return
-        
+
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     print(f'args = {args}')
     add_vertex_to_xyPtStack(shapeList)
-    if (len(win.xyPtStack) == 1):
+    if len(win.xyPtStack) == 1:
         statusText = "Now select point 2 (wp origin)."
         win.statusBar().showMessage(statusText)
-    elif (len(win.xyPtStack) == 2):
+    elif len(win.xyPtStack) == 2:
         statusText = "Now select point 3 to set uDir."
         win.statusBar().showMessage(statusText)
-    elif (len(win.xyPtStack) == 3):
+    elif len(win.xyPtStack) == 3:
         wpBy3Pts()
 
 def wpOnFace(*args):
@@ -147,16 +110,15 @@ def wpOnFace(*args):
         statusText = "Select face for workplane."
         win.statusBar().showMessage(statusText)
         return
-    else:
-        faceU = win.faceStack.pop()
-        faceW = win.faceStack.pop()
-        wp = workplane.WorkPlane(100, face=faceW, faceU=faceU)
-        win.getNewPartUID(wp, typ='w')
-        win.clearCallback()
-        statusText = "Workplane created."
-        win.statusBar().showMessage(statusText)
-        
-def wpOnFaceC(shapeList=None, *args):  # callback (collector) for wpOnFace
+    faceU = win.faceStack.pop()
+    faceW = win.faceStack.pop()
+    wp = workplane.WorkPlane(100, face=faceW, faceU=faceU)
+    win.getNewPartUID(wp, typ='w')
+    win.clearCallback()
+    statusText = "Workplane created."
+    win.statusBar().showMessage(statusText)
+
+def wpOnFaceC(shapeList, *args):  # callback (collector) for wpOnFace
     if not shapeList:
         shapeList = []
     print(shapeList)
@@ -165,10 +127,10 @@ def wpOnFaceC(shapeList=None, *args):  # callback (collector) for wpOnFace
         print(type(shape))
         face = topods_Face(shape)
         win.faceStack.append(face)
-    if (len(win.faceStack) == 1):
+    if len(win.faceStack) == 1:
         statusText = "Select face for workplane U direction."
         win.statusBar().showMessage(statusText)
-    elif (len(win.faceStack) == 2):
+    elif len(win.faceStack) == 2:
         wpOnFace()
 
 def makeWP():   # Default workplane located in X-Y plane at 0,0,0
@@ -203,17 +165,16 @@ def processLineEdit():
     text = win.lineEditStack.pop()
     if ',' in text:
         try:
-            xstr , ystr = text.split(',')
+            xstr, ystr = text.split(',')
             p = (float(xstr) * win.unitscale, float(ystr) * win.unitscale)
             win.xyPtStack.append(p)
-        except :
+        except:
             print("Problem with processing line edit stack")
     else:
         try:
             win.floatStack.append(float(text))
         except ValueError as e:
             print(f"{e}")
-    
 
 def clineH():   # Horizontal construction line
     if win.xyPtStack:
@@ -632,16 +593,16 @@ def delElC(shapeList, *args):
 
 def makeBox():
     name = 'Box'
-    myBody = BRepPrimAPI_MakeBox(60,60,50).Shape()
+    myBody = BRepPrimAPI_MakeBox(60, 60, 50).Shape()
     uid = win.getNewPartUID(myBody, name=name)
     win.redraw()
-    
+
 def makeCyl():
     name = 'Cylinder'
-    myBody = BRepPrimAPI_MakeCylinder(40,80).Shape()
+    myBody = BRepPrimAPI_MakeCylinder(40, 80).Shape()
     uid = win.getNewPartUID(myBody, name=name)
     win.redraw()
-    
+
 def makeWire():
     """Collect (up to 4) edges, make Wire, save to active wp."""
     wp = win.activeWp
@@ -714,7 +675,6 @@ def rotateAP():
     aTopLoc = TopLoc_Location(aRotTrsf)
     win.activePart.Move(aTopLoc)
     win.redraw()
-    return
 
 #############################################
 #
@@ -734,7 +694,7 @@ def fillet(event=None):
         wrkPrtUID = win.activePartUID
         mkFillet = BRepFilletAPI_MakeFillet(workPart)
         for edge in edges:
-            mkFillet.Add(filletR , edge)
+            mkFillet.Add(filletR, edge)
         newPart = mkFillet.Shape()
         win.getNewPartUID(newPart, ancestor=wrkPrtUID)
         win.statusBar().showMessage('Fillet operation complete')
@@ -744,7 +704,7 @@ def fillet(event=None):
         display.SetSelectionModeEdge()
         statusText = "Select edge(s) to fillet then specify fillet radius."
         win.statusBar().showMessage(statusText)
-        
+
 def filletC(shapeList, *args):  # callback (collector) for fillet
     print(shapeList)
     print(args)
@@ -757,7 +717,7 @@ def filletC(shapeList, *args):  # callback (collector) for fillet
 
 def fuse():
     """Fuse two solid shapes together."""
-    if len(win.shapeStack):
+    if win.shapeStack:
         shape = win.shapeStack.pop()
         workpart = win.activePart
         wrkPrtUID = win.activePartUID
@@ -814,7 +774,7 @@ def shellC(shapeList, *args):  # callback (collector) for shell
 #                   #
 #####################
 
-# Make Bottle step by step...   
+# Make Bottle step by step
 def makePoints(event=None):
     V1, V2, V3, V4, V5, V6 = bottle.makePoints()  # gp_Pnt
     display.DisplayShape(V1.Vertex())
@@ -835,14 +795,14 @@ def makePoints(event=None):
 
 def makeLines(event=None):
     e1, e2, e3 = bottle.makeLines()  # TopoDS_Edge
-    display.DisplayColoredShape(e1,'RED')
-    display.DisplayColoredShape(e2,'RED')
-    display.DisplayColoredShape(e3,'RED')
+    display.DisplayColoredShape(e1, 'RED')
+    display.DisplayColoredShape(e2, 'RED')
+    display.DisplayColoredShape(e3, 'RED')
     display.Repaint()
     win.statusBar().showMessage('Make lines complete')
 
 def makeHalfWire(event=None):
-    aWire  = bottle.makeHalfWire()  # TopoDS_Wire
+    aWire = bottle.makeHalfWire()  # TopoDS_Wire
     display.EraseAll()
     display.DisplayColoredShape(aWire, 'BLUE')
     display.Repaint()
@@ -875,7 +835,7 @@ def makeFillets(event=None):
     aEdgeExplorer = TopExp_Explorer(workPart, TopAbs_EDGE)
     while aEdgeExplorer.More():
         aEdge = topods_Edge(aEdgeExplorer.Current())
-        mkFillet.Add(bottle.thickness / 12. , aEdge)
+        mkFillet.Add(bottle.thickness / 12., aEdge)
         aEdgeExplorer.Next()
     myBody = mkFillet.Shape()
     win.getNewPartUID(myBody, name=newPrtName, ancestor=wrkPrtUID)
@@ -900,7 +860,7 @@ def addNeck(event=None):
 
 def topoDumpAP():
     Topology.dumpTopology(win.activePart)
-        
+
 def printCurrUID():
     print(win._currentUID)
 
@@ -920,7 +880,7 @@ def printActivePartInfo():
 
 def printPartsInActiveAssy():
     asyPrtTree = []
-    leafNodes = win.treeModel.leaves(self.activeAsyUID)
+    leafNodes = win.treeModel.leaves(win.activeAsyUID)
     for node in leafNodes:
         pid = node.identifier
         if pid in win._partDict:
@@ -956,14 +916,14 @@ def printDrawList():
 
 def printInSync():
     print(win.inSync())
-        
+
 def setUnits_in():
     win.setUnits('in')
-        
+
 def setUnits_mm():
     win.setUnits('mm')
 
-if __name__ == '__main__':        
+if __name__ == '__main__':
     app = QApplication(sys.argv)
     win = MainWindow()
     win.add_menu('File')
@@ -1013,11 +973,11 @@ if __name__ == '__main__':
     win.add_function_to_menu('Utility', "set Units ->mm", setUnits_mm)
 
     drawSubMenu = QMenu('Draw')
-    win.popMenu.addMenu(drawSubMenu)    
-    drawSubMenu.addAction('Fit All', win.fitAll)    
-    drawSubMenu.addAction('Redraw', win.redraw)    
-    drawSubMenu.addAction('Hide All', win.eraseAll)    
-    drawSubMenu.addAction('Draw All', win.drawAll)    
+    win.popMenu.addMenu(drawSubMenu)
+    drawSubMenu.addAction('Fit All', win.fitAll)
+    drawSubMenu.addAction('Redraw', win.redraw) 
+    drawSubMenu.addAction('Hide All', win.eraseAll)
+    drawSubMenu.addAction('Draw All', win.drawAll)
     drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
 
     win.treeView.popMenu.addAction('Set Active', win.setClickedActive)
@@ -1030,12 +990,12 @@ if __name__ == '__main__':
     display = win.canva._display
 
     selectSubMenu = QMenu('Select Mode')
-    win.popMenu.addMenu(selectSubMenu)    
-    selectSubMenu.addAction('Vertex', display.SetSelectionModeVertex)    
-    selectSubMenu.addAction('Edge', display.SetSelectionModeEdge)    
-    selectSubMenu.addAction('Face', display.SetSelectionModeFace)    
-    selectSubMenu.addAction('Shape', display.SetSelectionModeShape)    
-    selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)    
+    win.popMenu.addMenu(selectSubMenu)
+    selectSubMenu.addAction('Vertex', display.SetSelectionModeVertex)
+    selectSubMenu.addAction('Edge', display.SetSelectionModeEdge)
+    selectSubMenu.addAction('Face', display.SetSelectionModeFace)
+    selectSubMenu.addAction('Shape', display.SetSelectionModeShape)
+    selectSubMenu.addAction('Neutral', display.SetSelectionModeNeutral)
     win.popMenu.addAction('Clear Callback', win.clearCallback)
     # Construction Line Toolbar buttons
     win.wcToolBar.addAction(QIcon(QPixmap('icons/hcl.gif')), 'Horizontal', clineH)
