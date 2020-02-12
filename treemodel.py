@@ -21,19 +21,18 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from OCC.Core.TCollection import (TCollection_ExtendedString,
-                                  TCollection_AsciiString)
-from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
-from OCC.Core.TDF import (TDF_Label, TDF_LabelSequence,
-                          TDF_ChildIterator)
+import logging
+from OCC.Core.TCollection import TCollection_ExtendedString
+from OCC.Core.TDF import TDF_ChildIterator
 from OCC.Core.TDocStd import TDocStd_Document
-from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
 from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
                               XCAFDoc_DocumentTool_ColorTool,
                               XCAFDoc_DocumentTool_LayerTool,
-                              XCAFDoc_DocumentTool_MaterialTool,
-                              XCAFDoc_ColorSurf)
+                              XCAFDoc_DocumentTool_MaterialTool)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
 
 class TreeModel():
@@ -71,18 +70,18 @@ class TreeModel():
         they have references."""
         print("Entering 'getAllChildLabels'")
         if first:
-            self.allChildlabels = []
-        childlabels = self.getChildLabels(label)
-        print(f"len(childLabels) = {len(childlabels)}")
-        self.allChildlabels += childlabels
-        print(f"len(allChildLabels) = {len(self.allChildlabels)}")
-        for lbl in childlabels:
+            self.allChildLabels = []
+        childLabels = self.getChildLabels(label)
+        print(f"len(childLabels) = {len(childLabels)}")
+        self.allChildLabels += childLabels
+        print(f"len(allChildLabels) = {len(self.allChildLabels)}")
+        for lbl in childLabels:
             self.getAllChildLabels(lbl, first=False)
-        return self.allChildlabels
+        return self.allChildLabels
 
     def saveDoc(self, filename):
         """Save doc to file (for educational purposes) (not working yet)
         """
         logger.debug("Saving doc to file")
         savefilename = TCollection_ExtendedString(filename)
-        app.SaveAs(doc, savefilename)
+        self.app.SaveAs(self.doc, savefilename)
