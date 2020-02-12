@@ -21,76 +21,45 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-
-from itertools import islice
 import logging
-import math
 import os, os.path
 import sys
-import rpnCalculator
-import stepXD
-import treelib
-import workplane
 from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
-from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QTreeWidget,
-                             QMenu, QDockWidget, QDesktopWidget, QToolButton,
+from PyQt5.QtGui import QBrush, QColor
+from PyQt5.QtWidgets import (QLabel, QMainWindow, QTreeWidget, QMenu,
+                             QDockWidget, QDesktopWidget, QToolButton,
                              QLineEdit, QTreeWidgetItem, QAction, QDockWidget,
                              QToolBar, QFileDialog, QAbstractItemView,
                              QInputDialog, QTreeWidgetItemIterator)
 from OCC.Core.AIS import AIS_Shape, AIS_Line, AIS_Circle
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
-from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
-from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                     BRepBuilderAPI_MakeFace,
-                                     BRepBuilderAPI_MakeSolid,
-                                     BRepBuilderAPI_MakeWire,
-                                     BRepBuilderAPI_Sewing,
-                                     BRepBuilderAPI_Transform)
-from OCC.Core.BRepFill import brepfill
-from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
-from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism,
-                                  BRepPrimAPI_MakeCylinder) 
-from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
 from OCC.Core.CPnts import CPnts_AbscissaPoint_Length
-from OCC.Core.gp import (gp_Ax1, gp_Ax3, gp_Dir, gp_Lin, gp_Pln,
-                         gp_Pnt, gp_Trsf, gp_Vec)
-from OCC.Core.GC import GC_MakeSegment
-from OCC.Core.GeomAPI import GeomAPI_IntSS
+from OCC.Core.gp import gp_Vec
 from OCC.Core.IFSelect import IFSelect_RetDone
-from OCC.Core.IntAna import IntAna_IntConicQuad
 from OCC.Core.Interface import Interface_Static_SetCVal
-from OCC.Core.Precision import precision_Angular, precision_Confusion
-from OCC.Core.Prs3d import Prs3d_Drawer, Prs3d_LineAspect
-from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_RED,
-                               Quantity_NOC_GRAY, Quantity_NOC_BLACK,
+from OCC.Core.Prs3d import Prs3d_LineAspect
+from OCC.Core.Quantity import (Quantity_Color, Quantity_NOC_GRAY,
                                Quantity_NOC_DARKGREEN, Quantity_NOC_MAGENTA1)
 from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
-from OCC.Core.TCollection import (TCollection_ExtendedString,
-                                  TCollection_AsciiString)
+from OCC.Core.TCollection import TCollection_ExtendedString
 from OCC.Core.TDataStd import TDataStd_Name
-from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
-from OCC.Core.TopoDS import (topods_Edge, topods_Face, topods_Shell,
-                             topods_Vertex)
-from OCC.Core.TopLoc import TopLoc_Location
-from OCC.Core.TopTools import TopTools_ListOfShape
-from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
-                              XCAFDoc_DocumentTool_ColorTool,
-                              XCAFDoc_DocumentTool_LayerTool,
-                              XCAFDoc_DocumentTool_MaterialTool,
-                              XCAFDoc_ColorSurf)
-from OCCUtils import Construct, Topology
+from OCC.Core.TDF import TDF_LabelSequence
+from OCC.Core.TopoDS import (topods_Edge, topods_Vertex)
+from OCC.Core.XCAFDoc import XCAFDoc_DocumentTool_ShapeTool
 import OCC.Display.OCCViewer
 import OCC.Display.backend
-from OCC import VERSION
-print("OCC version: %s" % VERSION)
-
 used_backend = OCC.Display.backend.load_backend()
 # from OCC.Display import qtDisplay
 # import local version instead (allows changing rotate/pan/zoom controls)
 import myDisplay.qtDisplay as qtDisplay
+from OCC import VERSION
+import rpnCalculator
+import stepXD
+
+print("OCC version: %s" % VERSION)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
@@ -139,7 +108,7 @@ class TreeView(QTreeWidget): # With 'drag & drop' ; context menu
     def moveSelection(self, parent, position):
     # save the selected items
         selection = [QPersistentModelIndex(i)
-                      for i in self.selectedIndexes()]
+                     for i in self.selectedIndexes()]
         parent_index = self.indexFromItem(parent)
         if parent_index in selection:
             return False
@@ -160,19 +129,18 @@ class TreeView(QTreeWidget): # With 'drag & drop' ; context menu
             if position == -1:
                 # append the items if position not specified
                 if parent_index.isValid():
-                    parent.insertChild(
-                        parent.childCount(), taken.pop(0))
+                    parent.insertChild(parent.childCount(), taken.pop(0))
                 else:
-                    self.insertTopLevelItem(
-                        self.topLevelItemCount(), taken.pop(0))
+                    self.insertTopLevelItem(self.topLevelItemCount(),
+                                            taken.pop(0))
             else:
                 # insert the items at the specified position
                 if parent_index.isValid():
-                    parent.insertChild(min(target,
-                        parent.childCount()), taken.pop(0))
+                    parent.insertChild(min(target, parent.childCount()),
+                                       taken.pop(0))
                 else:
-                    self.insertTopLevelItem(min(target,
-                        self.topLevelItemCount()), taken.pop(0))
+                    self.insertTopLevelItem(min(target, self.topLevelItemCount()),
+                                            taken.pop(0))
         return True
 
 class MainWindow(QMainWindow):
@@ -185,7 +153,7 @@ class MainWindow(QMainWindow):
         self.customContextMenuRequested.connect(self.contextMenu)
         self.popMenu = QMenu(self)
         self.setWindowTitle("Simple CAD App using PythonOCC-%s (PyQt5 backend)"%VERSION)
-        self.resize(960,720)
+        self.resize(960, 720)
         self.setCentralWidget(self.canva)
         self.createDockWidget()
         self.wcToolBar = QToolBar("2D")  # Construction toolbar
@@ -265,6 +233,7 @@ class MainWindow(QMainWindow):
         self._assyDict = {}  # k = uid, v = Loc
         self._assyDict[0] = None  # Root assembly has no location vector
         self.showItemActive(0)
+        self.doc = None  # <class 'OCC.Core.TDocStd.TDocStd_Document'>
 
     def createDockWidget(self):
         self.treeDockWidget = QDockWidget("Assy/Part Structure", self)
@@ -277,18 +246,16 @@ class MainWindow(QMainWindow):
 
     ####  PyQt menuBar & general methods:
 
-    def centerOnScreen (self):
+    def centerOnScreen(self):
         '''Centers the window on the screen.'''
         resolution = QDesktopWidget().screenGeometry()
-        self.move(
-                    (resolution.width() / 2) - (self.frameSize().width() / 2),
-                    (resolution.height() / 2) - (self.frameSize().height() / 2)
-        )
+        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
+                  (resolution.height() / 2) - (self.frameSize().height() / 2))
 
     def add_menu(self, menu_name):
         _menu = self.menu_bar.addMenu("&"+menu_name)
-        self._menus[menu_name]=_menu
-        
+        self._menus[menu_name] = _menu
+
     def add_function_to_menu(self, menu_name, text, _callable):
         assert callable(_callable), 'the function supplied is not callable'
         try:
@@ -334,11 +301,11 @@ class MainWindow(QMainWindow):
                 if (uid in self._partDict.keys()) or (uid in self._wpDict.keys()):
                     dl.append(uid)
         return dl
-        
+
     def inSync(self):
         """Return True if checked items are in sync with drawList."""
         return self.checkedToList() == self.drawList
-        
+
     def syncDrawListToChecked(self):
         self.drawList = self.checkedToList()
 
@@ -443,7 +410,7 @@ class MainWindow(QMainWindow):
                 self._transparencyDict.pop(uid)
                 self.redraw()
             self.itemClicked = None
-               
+
     def editName(self): # Edit name of item clicked in treeView
         item = self.itemClicked
         sbText = '' # status bar text
@@ -479,7 +446,7 @@ class MainWindow(QMainWindow):
             self.units = units
             self.unitscale = self._unitDict[self.units]
             self.unitsLabel.setText("Units: %s " % self.units)
-    
+
     def getNewPartUID(self, objct, name="", ancestor=0,
                       typ='p', color=None):
         """
@@ -492,7 +459,7 @@ class MainWindow(QMainWindow):
         removed from the drawlist.
         """
         uid = self._currentUID + 1
-        self._currentUID = uid               
+        self._currentUID = uid
         if ancestor:
             if ancestor in self._colorDict.keys():
                 color = self._colorDict[ancestor]
@@ -511,7 +478,7 @@ class MainWindow(QMainWindow):
             if color:   # Quantity_Color()
                 c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
             else:
-                c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
+                c = OCC.Display.OCCViewer.rgb_color(.2, .1, .1)   # default color
             self._colorDict[uid] = c
             if ancestor:
                 self._ancestorDict[uid] = ancestor
@@ -545,7 +512,6 @@ class MainWindow(QMainWindow):
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
 
-
     def appendToStack(self):  # called when <ret> is pressed on line edit
         self.lineEditStack.append(self.lineEdit.text())
         self.lineEdit.clear()
@@ -557,7 +523,7 @@ class MainWindow(QMainWindow):
 
     def setActivePart(self, uid):
         """Change active part status in coordinated manner."""
-        # modify status in self 
+        # modify status in self
         self.activePartUID = uid
         self.activePart = self._partDict[uid]
         # show as active in treeView
@@ -565,7 +531,7 @@ class MainWindow(QMainWindow):
 
     def setActiveWp(self, uid):
         """Change active workplane status in coordinated manner."""
-        # modify status in self 
+        # modify status in self
         self.activeWpUID = uid
         self.activeWp = self._wpDict[uid]
         # show as active in treeView
@@ -573,7 +539,7 @@ class MainWindow(QMainWindow):
 
     def setActiveAsy(self, uid):
         """Change active assembly status in coordinated manner."""
-        # modify status in self 
+        # modify status in self
         self.activeAsyUID = uid
         self.activeAsy = self._assyDict[uid]
         # show as active in treeView
@@ -598,7 +564,7 @@ class MainWindow(QMainWindow):
         self.edgeStack = []
         self.faceStack = []
         self.ptStack = []
-        
+
     def registerCallback(self, callback):
         currCallback = self.registeredCallback
         if currCallback:    # Make sure a callback isn't already registered
@@ -606,7 +572,7 @@ class MainWindow(QMainWindow):
         self.canva._display.register_select_callback(callback)
         self.registeredCallback = callback
         self.currOpLabel.setText("Current Operation: %s " % callback.__name__[:-1])
-            
+
     def clearCallback(self):
         if self.registeredCallback:
             self.canva._display.unregister_callback(self.registeredCallback)
@@ -616,7 +582,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('')
             self.canva._display.SetSelectionModeNeutral()
             self.redraw()
-        
+
     #############################################
     #
     # 3D Display (Draw / Hide) methods:
@@ -631,7 +597,7 @@ class MainWindow(QMainWindow):
         context.RemoveAll(True)
         self.drawList = []
         self.syncCheckedToDrawList()
-    
+
     def redraw(self):
         context = self.canva._display.Context
         if not self.registeredCallback:
@@ -651,10 +617,6 @@ class MainWindow(QMainWindow):
                 # Set shape transparency, a float from 0.0 to 1.0
                 context.SetTransparency(aisShape, transp, True)
                 drawer = aisShape.DynamicHilightAttributes()
-                if uid == self.activePartUID:
-                    edgeColor = Quantity_Color(Quantity_NOC_RED)
-                else:
-                    edgeColor = Quantity_Color(Quantity_NOC_BLACK)
                 context.HilightWithColor(aisShape, drawer, True)
             elif uid in self._wpDict.keys():
                 wp = self._wpDict[uid]
@@ -700,9 +662,9 @@ class MainWindow(QMainWindow):
 
     def drawAll(self):
         self.drawList = []
-        for k in self._partDict.keys():
+        for k in self._partDict:
             self.drawList.append(k)
-        for k in self._wpDict.keys():
+        for k in self._wpDict:
             self.drawList.append(k)
         self.syncCheckedToDrawList()
         self.redraw()
@@ -748,7 +710,7 @@ class MainWindow(QMainWindow):
          'l': (TopLoc_Location),
          'c': (Quantity_Color),
          's': (TopoDS_Shape)}
-        This format makes it convenient to: 
+        This format makes it convenient to:
         1. Build the assy, part, name and color dictionaries using uid keys,
         2. Display the model with all its component parts correctly located and
         3. Build the Part/Assy tree view GUI (QTreeWidget).
@@ -761,7 +723,7 @@ class MainWindow(QMainWindow):
         fnametuple = QFileDialog.getOpenFileName(None, prompt, './',
                                                  "STEP files (*.stp *.STP *.step)")
         fname, _ = fnametuple
-        logger.debug("Load file name: %s" % fname)
+        logger.debug("Load file name: %s", fname)
         if not fname:
             print("Load step cancelled")
             return
@@ -806,18 +768,17 @@ class MainWindow(QMainWindow):
                 if color:
                     c = OCC.Display.OCCViewer.rgb_color(color.Red(), color.Green(), color.Blue())
                 else:
-                    c = OCC.Display.OCCViewer.rgb_color(.2,.1,.1)   # default color
+                    c = OCC.Display.OCCViewer.rgb_color(.2, .1, .1)   # default color
                 self._colorDict[uid] = c
                 self.activePartUID = uid           # Set as active part
                 self.activePart = shape
                 self.drawList.append(uid)   # Add to draw list
-        
+
         keyList = tempTreeDict.keys()
         keyList = list(keyList)
         keyList.sort()
         maxUID = keyList[-1]
         self._currentUID = maxUID
-        
         self.redraw()
 
     def saveStepActPrt(self):
@@ -828,7 +789,7 @@ class MainWindow(QMainWindow):
         if not fname:
             print("Save step cancelled.")
             return
-        
+
         # initialize the STEP exporter
         step_writer = STEPControl_Writer()
         Interface_Static_SetCVal("write.step.schema", "AP203")
@@ -836,7 +797,7 @@ class MainWindow(QMainWindow):
         # transfer shapes and write file
         step_writer.Transfer(self.activePart, STEPControl_AsIs)
         status = step_writer.Write(fname)
-        assert(status == IFSelect_RetDone)
+        assert status == IFSelect_RetDone
 
     def saveStep(self):
         """Export self.doc to STEP file."""
@@ -848,35 +809,33 @@ class MainWindow(QMainWindow):
         if not fname:
             print("Save step cancelled.")
             return
-        else:
-            # Reconstruct XCAFDoc related code from stepXD.StepImporter
-            labels = TDF_LabelSequence()
-            color_labels = TDF_LabelSequence()
-            shape_tool = XCAFDoc_DocumentTool_ShapeTool(self.doc.Main())
-            shape_tool.GetShapes(labels)
-            logger.info('Number of labels at root : %i' % labels.Length())
-            try:
-                rootlabel = labels.Value(1) # First label at root
-            except RuntimeError:
-                return
-            name = rootlabel.GetLabelName()
-            logger.info('Name of root label: %s' % name)
-            isAssy = shape_tool.IsAssembly(rootlabel)
-            logger.info("First label at root holds an assembly? %s" % isAssy)
+        # Reconstruct XCAFDoc related code from stepXD.StepImporter
+        labels = TDF_LabelSequence()
+        shape_tool = XCAFDoc_DocumentTool_ShapeTool(self.doc.Main())
+        shape_tool.GetShapes(labels)
+        logger.info('Number of labels at root : %i', labels.Length())
+        try:
+            rootlabel = labels.Value(1) # First label at root
+        except RuntimeError:
+            return
+        name = rootlabel.GetLabelName()
+        logger.info('Name of root label: %s', name)
+        isAssy = shape_tool.IsAssembly(rootlabel)
+        logger.info("First label at root holds an assembly? %s", isAssy)
 
-            # Modify self.doc by adding active part to rootlabel.
-            #Standard_Boolean expand = Standard_False; //default 
-            #TDF_Label aLabel = myAssembly->AddComponent (aShape [,expand]);
-            newLabel = shape_tool.AddComponent(rootlabel, self.activePart, True)
-            #set a name to newlabel (as a reminder using OCAF), use:
-            #TCollection_ExtendedString aName ...;
-            #// contains the desired name for this Label (ASCII)
-            #TDataStd_Name::Set (aLabel, aName);
-            newName = TCollection_ExtendedString(self._nameDict[self.activePartUID])
-            TDataStd_Name.Set(newLabel, newName)
-            logger.info('Name of new part: %s' % newName)
-            #myAssembly->UpdateAssemblies();
-            shape_tool.UpdateAssemblies()
+        # Modify self.doc by adding active part to rootlabel.
+        #Standard_Boolean expand = Standard_False; //default
+        #TDF_Label aLabel = myAssembly->AddComponent (aShape [,expand]);
+        newLabel = shape_tool.AddComponent(rootlabel, self.activePart, True)
+        #set a name to newlabel (as a reminder using OCAF), use:
+        #TCollection_ExtendedString aName ...;
+        #// contains the desired name for this Label (ASCII)
+        #TDataStd_Name::Set (aLabel, aName);
+        newName = TCollection_ExtendedString(self._nameDict[self.activePartUID])
+        TDataStd_Name.Set(newLabel, newName)
+        logger.info('Name of new part: %s', newName)
+        #myAssembly->UpdateAssemblies();
+        shape_tool.UpdateAssemblies()
 
         # initialize the STEP exporter
         step_writer = STEPCAFControl_Writer()
@@ -884,7 +843,7 @@ class MainWindow(QMainWindow):
         # transfer shapes and write file
         step_writer.Transfer(self.doc)
         status = step_writer.Write(fname)
-        assert(status == IFSelect_RetDone)
+        assert status == IFSelect_RetDone
 
     #############################################
     #
@@ -907,17 +866,17 @@ class MainWindow(QMainWindow):
             self.canva._display.SetSelectionModeVertex()
             statusText = "Select 2 points to measure distance."
             self.statusBar().showMessage(statusText)
-            
+
     def distPtPtC(self, shapeList, *args):  # callback (collector) for distPtPt
-        logger.debug('Edges selected: %s' % shapeList)
-        logger.debug(f'args: {args}')  # args = x, y mouse coords
+        logger.debug('Edges selected: %s', shapeList)
+        logger.debug('args: %s', args)  # args = x, y mouse coords
         for shape in shapeList:
             vrtx = topods_Vertex(shape)
             gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
             self.ptStack.append(gpPt)
         if len(self.ptStack) == 2:
             self.distPtPt()
-        
+
     def edgeLen(self):
         if self.edgeStack:
             edge = self.edgeStack.pop()
@@ -931,10 +890,10 @@ class MainWindow(QMainWindow):
             self.canva._display.SetSelectionModeEdge()
             statusText = "Pick an edge to measure."
             self.statusBar().showMessage(statusText)
-            
+
     def edgeLenC(self, shapeList, *args):  # callback (collector) for edgeLen
-        logger.debug('Edges selected: %s' % shapeList)
-        logger.debug(f'args: {args}')  # args = x, y mouse coords
+        logger.debug('Edges selected: %s', shapeList)
+        logger.debug('args: %s', args)  # args = x, y mouse coords
         for shape in shapeList:
             edge = topods_Edge(shape)
             self.edgeStack.append(edge)

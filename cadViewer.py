@@ -25,7 +25,8 @@
 import logging
 import math
 import sys
-from OCC.Core.AIS import AIS_Shape
+from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
+from PyQt5.QtGui import QIcon, QPixmap
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
 from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
@@ -42,11 +43,10 @@ from OCC.Core.TopoDS import (TopoDS_Vertex, TopoDS_Edge,
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopTools import TopTools_ListOfShape
 from OCCUtils import Topology
-from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
-from PyQt5.QtGui import QIcon, QPixmap
 import bottle
 from mainwindow import MainWindow
 import workplane
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) # set to DEBUG | INFO | ERROR
 
@@ -140,7 +140,7 @@ def makeWP():   # Default workplane located in X-Y plane at 0,0,0
 
 #############################################
 #
-# Create 2d Construction Line functions...
+# Create 2d Construction Line functions
 #
 #############################################
 
@@ -380,7 +380,7 @@ def ccircC(shapeList, *args):
 
 #############################################
 #
-# Create 2d Edge Profile functions...
+# Create 2d Edge Profile functions
 #
 #############################################
 
@@ -535,7 +535,7 @@ def geom():
 
 #############################################
 #
-# 2D Delete functions...
+# 2D Delete functions
 #
 #############################################
 
@@ -587,7 +587,7 @@ def delElC(shapeList, *args):
 
 #############################################
 #
-# 3D Geometry creation functions...
+# 3D Geometry creation functions
 #
 #############################################
 
@@ -641,8 +641,6 @@ def extrude():
             print("Need 'makeWire' first.")
             return
         myFaceProfile = BRepBuilderAPI_MakeFace(wire)
-        if myFaceProfile.IsDone():
-            bottomFace = myFaceProfile.Face()
         aPrismVec = wp.wVec * length
         myBody = BRepPrimAPI_MakePrism(myFaceProfile.Shape(),
                                        aPrismVec).Shape()
@@ -659,15 +657,13 @@ def extrudeC(shapeList, *args):
     if len(win.lineEditStack) == 2:
         extrude()
 
-
 #############################################
 #
-# 3D Geometry positioning functons...
+# 3D Geometry positioning functons
 #
 #############################################
 
 def rotateAP():
-    aisShape = AIS_Shape(win.activePart)
     ax1 = gp_Ax1(gp_Pnt(0., 0., 0.), gp_Dir(1., 0., 0.))
     aRotTrsf = gp_Trsf()
     angle = math.pi/18 # 10 degrees
@@ -678,7 +674,7 @@ def rotateAP():
 
 #############################################
 #
-# 3D Geometry modification functons...
+# 3D Geometry modification functons
 #
 #############################################
 
@@ -854,7 +850,7 @@ def addNeck(event=None):
 
 #############################################
 #
-#  Info & Utility functions:
+#  Info & Utility functions
 #
 #############################################
 
@@ -975,7 +971,7 @@ if __name__ == '__main__':
     drawSubMenu = QMenu('Draw')
     win.popMenu.addMenu(drawSubMenu)
     drawSubMenu.addAction('Fit All', win.fitAll)
-    drawSubMenu.addAction('Redraw', win.redraw) 
+    drawSubMenu.addAction('Redraw', win.redraw)
     drawSubMenu.addAction('Hide All', win.eraseAll)
     drawSubMenu.addAction('Draw All', win.drawAll)
     drawSubMenu.addAction('Draw Only Active Part', win.drawOnlyActivePart)
