@@ -22,42 +22,37 @@
 #
 
 import math
-from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
                                      BRepBuilderAPI_MakeFace,
                                      BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
 from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
-from OCC.Core.GCE2d import GCE2d_MakeSegment
 from OCC.Core.Geom2d import Geom2d_Circle, Geom2d_Line
 from OCC.Core.Geom2dAPI import Geom2dAPI_InterCurveCurve
-from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Curve, Geom_Line
-from OCC.Core.GeomAPI import geomapi_To3d
-from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Dir2d, gp_Lin, gp_Lin2d, gp_Pnt,
+from OCC.Core.Geom import Geom_Circle, Geom_Plane, Geom_Line
+from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Dir2d, gp_Lin2d, gp_Pnt,
                          gp_Pnt2d, gp_Ax2d, gp_Circ2d, gp_Pln, gp_Trsf, gp_Vec)
 from OCC.Core.GProp import GProp_GProps
-from OCC.Core.TopAbs import TopAbs_REVERSED
 from OCCUtils.Construct import face_normal
 
 INFINITY = 1e+10  # mm (on the order of Earth's diameter)
 
 #===========================================================================
-# 
+#
 # Math & geometry 2D utility functions
-# 
+#
 #===========================================================================
 
 def intersection(cline1, cline2):
     """Return intersection (x,y) of 2 clines expressed as (a,b,c) coeff."""
-    a,b,c = cline1
-    d,e,f = cline2
-    i = b*f-c*e
-    j = c*d-a*f
-    k = a*e-b*d
+    a, b, c = cline1
+    d, e, f = cline2
+    i = b*f - c*e
+    j = c*d - a*f
+    k = a*e - b*d
     if k:
         return (i/k, j/k)
-    else:
-        return None
+    return None
 
 def cnvrt_2pts_to_coef(pt1, pt2):
     """Return (a,b,c) coefficients of cline defined by 2 (x,y) pts."""
@@ -83,8 +78,8 @@ def pnt_in_box_p(pnt, box):
     '''Point in box predicate: Return True if pnt is in box.'''
     x, y = pnt
     x1, y1, x2, y2 = box
-    if x1<x<x2 and y1<y<y2: return True
-    else: return False
+    if x1 < x < x2 and y1 < y < y2:
+        return True
 
 def midpoint(p1, p2, f=.5):
     """Return point part way (f=.5 by def) between points p1 and p2."""
@@ -148,7 +143,7 @@ def line_circ_inters(line, circle):
     xb2 = x0 + 2*r
     yb2 = y0 + 2*r
     box = (xb1, yb1, xb2, yb2)
-    # define line segment to be intersection points of line with box 
+    # define line segment to be intersection points of line with box
     p1, p2 = cline_box_intrsctn(line, box)
     x1, y1 = p1
     x2, y2 = p2
@@ -180,8 +175,6 @@ def same_pt_p(p1, p2):
     '''Return True if p1 and p2 are within 1e-10 of each other.'''
     if p2p_dist(p1, p2) < 1e-6:
         return True
-    else:
-        return False
 
 def cline_box_intrsctn(cline, box):
     """Return tuple of pts where line intersects edges of box."""
@@ -226,15 +219,17 @@ def closer(p0, p1, p2):
     """Return closer of p1 or p2 to point p0."""
     d1 = (p1[0] - p0[0])**2 + (p1[1] - p0[1])**2
     d2 = (p2[0] - p0[0])**2 + (p2[1] - p0[1])**2
-    if d1 < d2: return p1
-    else: return p2
+    if d1 < d2:
+        return p1
+    return p2
 
 def farther(p0, p1, p2):
     """Return farther of p1 or p2 from point p0."""
     d1 = (p1[0] - p0[0])**2 + (p1[1] - p0[1])**2
     d2 = (p2[0] - p0[0])**2 + (p2[1] - p0[1])**2
-    if d1 > d2: return p1
-    else: return p2
+    if d1 > d2:
+        return p1
+    return p2
 
 def find_fillet_pts(r, commonpt, end1, end2):
     """Return ctr of fillet (radius r) and tangent pts for corner
@@ -254,8 +249,10 @@ def find_fillet_pts(r, commonpt, end1, end2):
     p1b = proj_pt_on_line(cl2b, end1)
     da = p2p_dist(p1a, end1)
     db = p2p_dist(p1b, end1)
-    if da <= db: cl2 = cl2a
-    else: cl2 = cl2b
+    if da <= db:
+        cl2 = cl2a
+    else:
+        cl2 = cl2b
     pc = intersection(cl1, cl2)
     p1 = proj_pt_on_line(line1, pc)
     p2 = proj_pt_on_line(line2, pc)
@@ -295,7 +292,7 @@ def cr_from_3p(p1, p2, p3):
     radial_line2 = perp_line(chord2, midpoint(p2, p3))
     ctr = intersection(radial_line1, radial_line2)
     if ctr:
-        radius =  p2p_dist(p1, ctr)
+        radius = p2p_dist(p1, ctr)
         return (ctr, radius)
 
 def extendline(p0, p1, d):
@@ -304,8 +301,6 @@ def extendline(p0, p1, d):
     pts = seg_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
     if pts:
         return farther(p0, pts[0], pts[1])
-    else:
-        return
 
 def shortenline(p0, p1, d):
     """Return point which lies on line segment p0-p1,
@@ -313,8 +308,6 @@ def shortenline(p0, p1, d):
     pts = seg_circ_inters(p0[0], p0[1], p1[0], p1[1], p1[0], p1[1], d)
     if pts:
         return closer(p0, pts[0], pts[1])
-    else:
-        return
 
 def line_tan_to_circ(circ, p):
     """Return tan pts on circ of line through p."""
@@ -390,7 +383,7 @@ def rotate_pt(pt, ang, ctr):
 
 #===========================================================================
 
-class WorkPlane(object):
+class WorkPlane():
     """A 2D plane for creating 2D 'Profiles' for building or modifying 3D geometry.
 
     In addition to profile geometry, the workplane also contains 'construction'
@@ -403,11 +396,11 @@ class WorkPlane(object):
     """
     def __init__(self, size, face=None, faceU=None, ax3=None):
         # gp_Ax3 of XYZ coord system
-        origin = gp_Pnt(0,0,0)
-        wDir = gp_Dir(0,0,1)
-        uDir = gp_Dir(1,0,0)
-        vDir = gp_Dir(0,1,0)
-        xyzAx3 = gp_Ax3(origin, wDir, uDir)          
+        origin = gp_Pnt(0, 0, 0)
+        wDir = gp_Dir(0, 0, 1)
+        uDir = gp_Dir(1, 0, 0)
+        vDir = gp_Dir(0, 1, 0)
+        xyzAx3 = gp_Ax3(origin, wDir, uDir)
         if (not face and not ax3):  # create default wp (in XY plane at 0,0,0)
             axis3 = xyzAx3
             gpPlane = gp_Pln(xyzAx3)
@@ -431,7 +424,7 @@ class WorkPlane(object):
             origin = axis3.Location()
             self.gpPlane = gp_Pln(axis3)
             self.plane = Geom_Plane(self.gpPlane)    # type: Geom_Plane
-            
+
         self.Trsf = gp_Trsf()
         self.Trsf.SetTransformation(axis3)
         self.Trsf.Invert()
@@ -448,8 +441,8 @@ class WorkPlane(object):
         self.edgeList = [] # List of profile lines type: <TopoDS_Edge>
         self.wire = None
         self.accuracy = 1e-6   # min distance between two points
-        self.hvcl((0,0))    # Make H-V clines through origin
-        
+        self.hvcl((0, 0))    # Make H-V clines through origin
+
     def makeSqProfile(self, size):
         # points and segments need to be in CW sequence to get W pointing along Z
         p1 = gp_Pnt(-size, size, 0).Transformed(self.Trsf)
@@ -627,7 +620,7 @@ class WorkPlane(object):
         pntList = []
         for point in points:
             if point:  # exclude 'None' types
-                x,y = point
+                x, y = point
                 pnt = gp_Pnt(x, y, 0)
                 pnt.Transform(self.Trsf)
                 pntList.append(pnt)
@@ -659,7 +652,7 @@ class WorkPlane(object):
         # 2 diagonally opposite corners
         x1, y1 = pnt1
         x2, y2 = pnt2
-        # 4 corners of rectangle 
+        # 4 corners of rectangle
         p1 = gp_Pnt(x1, y1, 0).Transformed(self.Trsf)
         p2 = gp_Pnt(x2, y1, 0).Transformed(self.Trsf)
         p3 = gp_Pnt(x2, y2, 0).Transformed(self.Trsf)
@@ -692,16 +685,11 @@ class WorkPlane(object):
         """Convert 2d circle ((cx, cy), r) to type <Geom_Circle>"""
         (cx, cy), rad = circ
         cntrPt = gp_Pnt(cx, cy, 0)
-        ax2 = gp_Ax2(cntrPt, gp_Dir(0,0,1))
+        ax2 = gp_Ax2(cntrPt, gp_Dir(0, 0, 1))
         geomCirc = Geom_Circle(ax2, rad)
         geomCirc.Transform(self.Trsf)
         return geomCirc
-    '''
-    def geomCircs(self):
-        """Return self.ccircs as type Geom_Circles."""
-        return [self.convert_circ_to_geomCirc(circ)
-                for circ in self.ccircs]
-    '''
+
     def convert_circ_to_geom2dCirc(self, circ):
         (cx, cy), r = circ
         return Geom2d_Circle(gp_Circ2d(gp_Ax2d(gp_Pnt2d(cx, cy),
