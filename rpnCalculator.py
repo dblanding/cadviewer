@@ -51,14 +51,14 @@ class Calculator(QDialog):
     mem = ''
     keip = False    # Flag set when keyboard entry is in progress
     needrup = False # Flag signaling need to rotate up with next keyboard entry
-    
+
     NumDigitButtons = 10
-    
+
     def __init__(self, parent=None):
         super(Calculator, self).__init__(parent)
         self.caller = parent
         self.setWindowTitle("RPN Calculator")
-        
+    
         self.x = 0
         self.y = 0
         self.z = 0
@@ -75,7 +75,7 @@ class Calculator(QDialog):
         mygreen = 'green'
         myred = 'hsv(0,255,180)'
         mygold = 'goldenrod'
-        
+
         self.mainLayout = QGridLayout()
         self.mainLayout.setSpacing(0)
         self.mainLayout.setSizeConstraint(QLayout.SetFixedSize)
@@ -93,39 +93,39 @@ class Calculator(QDialog):
         self.butn('1/x', 1, 30, lambda state, op='1/x': self.func(op), colspan=6)
         self.butn('2x', 2, 30, lambda state, op='x*2': self.func(op), colspan=6)
         self.butn('x/2', 3, 30, lambda state, op='x/2': self.func(op), colspan=6)
-        
+
         self.butn('mm -> in', 4, 0, self.mm2in, colspan=12)
         self.butn('in -> mm', 4, 12, self.in2mm, colspan=12)
         self.butn('STO', 4, 24, self.storex, clr=mygreen, colspan=6)
         self.butn('RCL', 4, 30, self.recallx, clr=mygreen, colspan=6)
-        
+
         self.butn('7', 5, 0, lambda state, c='7': self.keyin(c), clr=myblue1)
         self.butn('8', 5, 6, lambda state, c='8': self.keyin(c), clr=myblue1)
         self.butn('9', 5, 12, lambda state, c='9': self.keyin(c), clr=myblue1)
         self.butn('+', 5, 18, lambda state, op='+': self.calculate(op), clr=myblue2)
         self.butn('R up', 5, 24, self.rotateup, clr=mygreen, colspan=6)
         self.butn('R dn', 5, 30, self.rotatedn, clr=mygreen, colspan=6)
-        
+
         self.butn('4', 6, 0, lambda state, c='4': self.keyin(c), clr=myblue1)
         self.butn('5', 6, 6, lambda state, c='5': self.keyin(c), clr=myblue1)
         self.butn('6', 6, 12, lambda state, c='6': self.keyin(c), clr=myblue1)
         self.butn('-', 6, 18, lambda state, op='-': self.calculate(op), clr=myblue2)
         self.butn('<-', 6, 24, self.trimx, clr=myred, colspan=4)
         self.butn('X<>Y', 6, 28, self.swapxy, clr=mygreen, colspan=8)
-        
+
         self.butn('1', 7, 0, lambda state, c='1': self.keyin(c), clr=myblue1)
         self.butn('2', 7, 6, lambda state, c='2': self.keyin(c), clr=myblue1)
         self.butn('3', 7, 12, lambda state, c='3': self.keyin(c), clr=myblue1)
         self.butn('*', 7, 18, lambda state, op='*': self.calculate(op), clr=myblue2)
         self.butn('CL X', 7, 24, self.clearx, clr=myred)
         self.butn('CLR', 7, 30, self.clearall, clr=myred)
-        
+
         self.butn('0', 8, 0, lambda state, c='0': self.keyin(c), clr=myblue1)
         self.butn('.', 8, 6, lambda state, c='.': self.keyin(c), clr=myblue2)
         self.butn('+/-', 8, 12, lambda state, op='+/-': self.calculate(op), clr=myblue2)
         self.butn('/', 8, 18, lambda state, c='/': self.calculate(c), clr=myblue2)
         self.butn('ENTER', 8, 24, self.enter, clr=mygold, colspan=12)
-        
+
         self.butn('Sin', 9, 0,
                   lambda state, op='math.sin(x)': self.func(op, in_cnvrt=1),
                   clr=mygold, colspan=8)
@@ -155,15 +155,15 @@ class Calculator(QDialog):
         self.butn('Rad', 11, 16, self.noop, clr=mygray, colspan=8)
         self.butn('Ang', 11, 24, self.noop, clr=mygray)
         self.butn('', 11, 30, self.noop, clr=mygray)
-        
+
         self.setLayout(self.mainLayout)
-        
+
     def butn(self, text, row, col, com=None, clr='dimgray', rowspan=1, colspan=6):
         b = Button(text)
         b.clicked.connect(com)
         b.setStyleSheet('color: white; background-color: %s' % clr)
         self.mainLayout.addWidget(b, row, col, rowspan, colspan)
-        
+
     def display(self):
         d = QLineEdit('0')
         d.setAlignment(QtCore.Qt.AlignRight)
@@ -216,7 +216,7 @@ class Calculator(QDialog):
         self.ydisplay.setText(str(self.y))
         self.zdisplay.setText(str(self.z))
         self.tdisplay.setText(str(self.t))
-        
+
     def enter(self):
         self.t = self.z
         self.z = self.y
@@ -323,7 +323,7 @@ class Calculator(QDialog):
     def clearx(self):
         self.x = 0
         self.xdisplay.setText('0')
-        
+
     def clearall(self):
         self.x = self.y = self.z = self.t = 0
         self.updateDisplays()
@@ -341,8 +341,6 @@ class Calculator(QDialog):
 
 
 if __name__ == '__main__':
-
-    import sys
 
     app = QApplication(sys.argv)
     calc = Calculator()
