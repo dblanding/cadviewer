@@ -28,20 +28,10 @@ import treelib
 from treemodel import TreeModel
 from OCC.Core.IFSelect import IFSelect_RetDone
 from OCC.Core.Quantity import Quantity_Color
-from OCC.Core.STEPCAFControl import (STEPCAFControl_Reader,
-                                     STEPCAFControl_Writer)
-from OCC.Core.TCollection import (TCollection_ExtendedString,
-                                  TCollection_AsciiString)
-from OCC.Core.TDataStd import TDataStd_Name, TDataStd_Name_GetID
-from OCC.Core.TDF import TDF_Label, TDF_LabelSequence, TDF_ChildIterator
-from OCC.Core.TDocStd import TDocStd_Document
+from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
+from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
 from OCC.Core.TopLoc import TopLoc_Location
-from OCC.Core.XCAFApp import XCAFApp_Application_GetApplication
-from OCC.Core.XCAFDoc import (XCAFDoc_DocumentTool_ShapeTool,
-                              XCAFDoc_DocumentTool_ColorTool,
-                              XCAFDoc_DocumentTool_LayerTool,
-                              XCAFDoc_DocumentTool_MaterialTool,
-                              XCAFDoc_ColorSurf)
+from OCC.Core.XCAFDoc import XCAFDoc_ColorSurf
 from OCC.Extend.TopologyUtils import TopologyExplorer
 
 logger = logging.getLogger(__name__)
@@ -79,9 +69,7 @@ class StepImporter():
         #string_seq = self.layer_tool.GetObject().GetLayers(shape)
         color = Quantity_Color()
         self.color_tool.GetColor(shape, XCAFDoc_ColorSurf, color)
-        logger.debug("color: {0}, {1}, {2}".format(color.Red(),
-                                                   color.Green(),
-                                                   color.Blue()))
+        logger.debug("color: %i, %i, %i", color.Red(), color.Green(), color.Blue())
         return color
 
     def findComponents(self, label, comps):
@@ -93,26 +81,26 @@ class StepImporter():
         the location of the referred shape or assembly.
         """
         logger.debug("")
-        logger.debug("Finding components of label entry %s)" % label.EntryDumpToString())
+        logger.debug("Finding components of label entry %s)", label.EntryDumpToString())
         for j in range(comps.Length()):
-            logger.debug("loop %i of %i" % (j+1, comps.Length()))
+            logger.debug("loop %i of %i", j+1, comps.Length())
             cLabel = comps.Value(j+1)  # component label <class 'OCC.Core.TDF.TDF_Label'>
             cShape = self.shape_tool.GetShape(cLabel)
-            logger.debug(f"Component number {j+1}")
-            logger.debug("Component entry: %s" % cLabel.EntryDumpToString())
+            logger.debug("Component number %i", j+1)
+            logger.debug("Component entry: %s", cLabel.EntryDumpToString())
             name = self.getName(cLabel)
-            logger.debug("Component name: %s" % name)
+            logger.debug("Component name: %s", name)
             refLabel = TDF_Label()  # label of referred shape (or assembly)
             isRef = self.shape_tool.GetReferredShape(cLabel, refLabel)
             if isRef:  # I think all components are references, but just in case...
                 refShape = self.shape_tool.GetShape(refLabel)
                 refLabelEntry = refLabel.EntryDumpToString()
-                logger.debug("Entry referred to: %s" % refLabelEntry)
+                logger.debug("Entry referred to: %s", refLabelEntry)
                 refName = self.getName(refLabel)
-                logger.debug("Name of referred item: %s" % refName)
+                logger.debug("Name of referred item: %s", refName)
                 if self.shape_tool.IsSimpleShape(refLabel):
                     logger.debug("Referred item is a Shape")
-                    logger.debug("Name of Shape: %s" % refName)
+                    logger.debug("Name of Shape: %s", refName)
                     tempAssyLocStack = list(self.assyLocStack)
                     tempAssyLocStack.reverse()
 
@@ -126,7 +114,7 @@ class StepImporter():
                                           {'a': False, 'l': None, 'c': color, 's': cShape})
                 elif self.shape_tool.IsAssembly(refLabel):
                     logger.debug("Referred item is an Assembly")
-                    logger.debug("Name of Assembly: %s" % refName)
+                    logger.debug("Name of Assembly: %s", refName)
                     name = self.getName(cLabel)  # Instance name
                     aLoc = TopLoc_Location()
                     # Location vector is carried by component
@@ -141,14 +129,13 @@ class StepImporter():
                     rComps = TDF_LabelSequence() # Components of Assy
                     subchilds = False
                     isAssy = self.shape_tool.GetComponents(refLabel, rComps, subchilds)
-                    logger.debug("Assy name: %s" % name)
-                    logger.debug("Is Assembly? %s" % isAssy)
-                    logger.debug("Number of components: %s" % rComps.Length())
+                    logger.debug("Assy name: %s", name)
+                    logger.debug("Is Assembly? %s", isAssy)
+                    logger.debug("Number of components: %s", rComps.Length())
                     if rComps.Length():
                         self.findComponents(refLabel, rComps)
         self.assyUidStack.pop()
         self.assyLocStack.pop()
-        return
 
     def read_file(self):
         """Build tree = treelib.Tree() to facilitate displaying the CAD model and
@@ -175,20 +162,16 @@ class StepImporter():
             step_reader.Transfer(tmodel.doc)
 
         labels = TDF_LabelSequence()
-        color_labels = TDF_LabelSequence()
-
         self.shape_tool.GetShapes(labels)
-        logger.info('Number of labels at root : %i' % labels.Length())
+        logger.info('Number of labels at root : %i', labels.Length())
         try:
             rootlabel = labels.Value(1) # First label at root
         except RuntimeError:
             return
-        # Get list of child labels below rootlabel
-        childlist = tmodel.getChildLabels(rootlabel)
         name = self.getName(rootlabel)
-        logger.info('Name of root label: %s' % name)
+        logger.info('Name of root label: %s', name)
         isAssy = self.shape_tool.IsAssembly(rootlabel)
-        logger.info("First label at root holds an assembly? %s" % isAssy)
+        logger.info("First label at root holds an assembly? %s", isAssy)
         if isAssy:
             # If first label at root holds an assembly, it is the Top Assembly.
             # Through this label, the entire assembly is accessible.
@@ -197,8 +180,8 @@ class StepImporter():
             topLoc = self.shape_tool.GetLocation(rootlabel)
             self.assyLocStack.append(topLoc)
             entry = rootlabel.EntryDumpToString()
-            logger.debug("Entry: %s" % entry)
-            logger.debug("Top assy name: %s" % name)
+            logger.debug("Entry: %s", entry)
+            logger.debug("Top assy name: %s", name)
             # Create root node for top assy
             newAssyUID = self.getNewUID()
             self.tree.create_node(name, newAssyUID, None,
@@ -207,9 +190,9 @@ class StepImporter():
             topComps = TDF_LabelSequence() # Components of Top Assy
             subchilds = False
             isAssy = self.shape_tool.GetComponents(rootlabel, topComps, subchilds)
-            logger.debug("Is Assembly? %s" % isAssy)
-            logger.debug("Number of components: %s" % topComps.Length())
-            logger.debug("Is Reference? %s" % self.shape_tool.IsReference(rootlabel))
+            logger.debug("Is Assembly? %s", isAssy)
+            logger.debug("Number of components: %s", topComps.Length())
+            logger.debug("Is Reference? %s", self.shape_tool.IsReference(rootlabel))
             if topComps.Length():
                 self.findComponents(rootlabel, topComps)
         else:
@@ -224,20 +207,20 @@ class StepImporter():
                 label = labels.Value(j+1)
                 name = self.getName(label)
                 isAssy = self.shape_tool.IsAssembly(label)
-                logger.debug("Label %i is assembly?: %s" % (j+1, isAssy))
+                logger.debug("Label %i is assembly?: %s", j+1, isAssy)
                 shape = self.shape_tool.GetShape(label)
                 color = self.getColor(shape)
                 isSimpleShape = self.shape_tool.IsSimpleShape(label)
-                logger.debug("Is Simple Shape? %s" % isSimpleShape)
+                logger.debug("Is Simple Shape? %s", isSimpleShape)
                 shapeType = shape.ShapeType()
-                logger.debug("The shape type is: %i" % shapeType)
+                logger.debug("The shape type is: %i", shapeType)
                 if shapeType == 0:
                     logger.debug("The shape type is OCC.Core.TopAbs.TopAbs_COMPOUND")
                     topo = TopologyExplorer(shape)
                     #topo = aocutils.topology.Topo(shape)
-                    logger.debug("Nb of compounds : %i" % topo.number_of_compounds())
-                    logger.debug("Nb of solids : %i" % topo.number_of_solids())
-                    logger.debug("Nb of shells : %i" % topo.number_of_shells())
+                    logger.debug("Nb of compounds : %i", topo.number_of_compounds())
+                    logger.debug("Nb of solids : %i", topo.number_of_solids())
+                    logger.debug("Nb of shells : %i", topo.number_of_shells())
                     newAssyUID = self.getNewUID()
                     for i, solid in enumerate(topo.solids()):
                         name = "P%s" % str(i+1)
