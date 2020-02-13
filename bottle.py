@@ -21,7 +21,7 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-
+import math
 from OCC.Core.gp import (gp_Pnt, gp_OX, gp_Vec, gp_Trsf, gp_DZ, gp_Ax2, gp_Ax3,
                          gp_Pnt2d, gp_Dir2d, gp_Ax2d)
 from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
@@ -42,6 +42,7 @@ from OCC.Core.GeomAbs import GeomAbs_Plane
 from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
 from OCC.Core.TopoDS import topods, topods_Wire, TopoDS_Compound
 from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopTools import TopTools_ListOfShape
 
 #####################
@@ -72,8 +73,12 @@ thickness = 30
 def makeBottle(): # complete bottle
     startBottle(complete=True)
 
-def startBottle(complete=False): # minus the neck fillet, shelling & threads
-    complete = complete
+def startBottle(complete=False):
+    """Build the classic OCC Bottle.
+
+    complete=False: minus the neck fillet, shelling & threads.
+    complete=True: including shelling & threads."""
+
     partName = "Bottle-start"
     # The points we'll use to create the profile of the bottle's body
     aPnt1 = gp_Pnt(-width / 2.0, 0, 0)
@@ -144,10 +149,10 @@ def startBottle(complete=False): # minus the neck fillet, shelling & threads
     myNeckHeight = height / 10.0
 
     mkCylinder = BRepPrimAPI_MakeCylinder(neckAx2, myNeckRadius, myNeckHeight)
-    myBody = BRepAlgoAPI_Fuse(myBody , mkCylinder.Shape())
+    myBody = BRepAlgoAPI_Fuse(myBody, mkCylinder.Shape())
     if not complete: # quit here
-        uid = win.getNewPartUID(myBody.Shape(), name=partName)
-        win.redraw()
+        #uid = win.getNewPartUID(myBody.Shape(), name=partName)
+        #win.redraw()
         return
 
     partName = "Bottle-complete"
@@ -227,17 +232,17 @@ def startBottle(complete=False): # minus the neck fillet, shelling & threads
     aBuilder.MakeCompound(aRes)
     aBuilder.Add(aRes, myBody.Shape())
     aBuilder.Add(aRes, myThreading)
-    uid = win.getNewPartUID(aRes, name=partName)
-    win.redraw()
+    #uid = win.getNewPartUID(aRes, name=partName)
+    #win.redraw()
 
-# Make Bottle step by step...   
+# Make Bottle step by step...
 def makePoints():
     global aPnt1, aPnt2, aPnt3, aPnt4, aPnt5
-    aPnt1 = gp_Pnt(-width / 2. , 0 , 0)
-    aPnt2 = gp_Pnt(-width / 2. , -thickness / 4. , 0)
-    aPnt3 = gp_Pnt(0 , -thickness / 2. , 0)
-    aPnt4 = gp_Pnt(width / 2. , -thickness / 4. , 0)
-    aPnt5 = gp_Pnt(width / 2. , 0 , 0)
+    aPnt1 = gp_Pnt(-width / 2., 0, 0)
+    aPnt2 = gp_Pnt(-width / 2., -thickness / 4., 0)
+    aPnt3 = gp_Pnt(0, -thickness / 2., 0)
+    aPnt4 = gp_Pnt(width / 2., -thickness / 4., 0)
+    aPnt5 = gp_Pnt(width / 2., 0, 0)
     # points aren't visible on screen
     # make vertices in order to see them
     V1 = BRepBuilderAPI_MakeVertex(aPnt1)
@@ -246,15 +251,15 @@ def makePoints():
     V4 = BRepBuilderAPI_MakeVertex(aPnt4)
     V5 = BRepBuilderAPI_MakeVertex(aPnt5)
     # add dummy vertex above bottle just to set view size
-    V6 = BRepBuilderAPI_MakeVertex(gp_Pnt(0,0,height*1.1))
+    V6 = BRepBuilderAPI_MakeVertex(gp_Pnt(0, 0, height * 1.1))
     return (V1, V2, V3, V4, V5, V6)
 
 def makeLines():
     global aEdge1, aEdge2, aEdge3
     # Make type 'Geom_TrimmedCurve' from type 'gp_Pnt'
-    aArcOfCircle = GC_MakeArcOfCircle(aPnt2, aPnt3 ,aPnt4)
-    aSegment1 = GC_MakeSegment(aPnt1 , aPnt2)
-    aSegment2 = GC_MakeSegment(aPnt4 , aPnt5)
+    aArcOfCircle = GC_MakeArcOfCircle(aPnt2, aPnt3, aPnt4)
+    aSegment1 = GC_MakeSegment(aPnt1, aPnt2)
+    aSegment2 = GC_MakeSegment(aPnt4, aPnt5)
     # Make type 'TopoDS_Edge' from type 'Geom_TrimmedCurve'
     aEdge1 = BRepBuilderAPI_MakeEdge(aSegment1.Value())
     aEdge2 = BRepBuilderAPI_MakeEdge(aArcOfCircle.Value())
@@ -264,9 +269,9 @@ def makeLines():
 def makeHalfWire():
     global aWire
     # Make type 'TopoDS_Wire' from type 'TopoDS_Edge'
-    aWire  = BRepBuilderAPI_MakeWire(aEdge1.Edge(),
-                                     aEdge2.Edge(),
-                                     aEdge3.Edge()).Wire()
+    aWire = BRepBuilderAPI_MakeWire(aEdge1.Edge(),
+                                    aEdge2.Edge(),
+                                    aEdge3.Edge()).Wire()
     return aWire
 
 def makeWholeWire():
@@ -295,15 +300,15 @@ def makeFace():
     return bottomFace
 
 def makeBody():
-    aPrismVec = gp_Vec(0 , 0 , height)
+    aPrismVec = gp_Vec(0, 0, height)
     myBody = BRepPrimAPI_MakePrism(myFaceProfile.Shape(),
                                    aPrismVec).Shape()
     return myBody
 
 def addNeck():
-    neckLocation = gp_Pnt(0 , 0 , height)
+    neckLocation = gp_Pnt(0, 0, height)
     neckNormal = gp_DZ()
-    neckAx2 = gp_Ax2(neckLocation , neckNormal)
+    neckAx2 = gp_Ax2(neckLocation, neckNormal)
     myNeckRadius = thickness / 4.
     myNeckHeight = height / 10.
     MKCylinder = BRepPrimAPI_MakeCylinder(neckAx2,
