@@ -678,6 +678,37 @@ def rotateAP():
 #
 #############################################
 
+def mill():
+    """Mill profile on active WP into active part."""
+    wp = win.activeWp
+    if win.lineEditStack:
+        length = float(win.lineEditStack.pop()) * win.unitscale
+        wire = wp.wire
+        if not wire:
+            print("Need to 'makeWire' first.")
+            return
+        workPart = win.activePart
+        wrkPrtUID = win.activePartUID
+        punchProfile = BRepBuilderAPI_MakeFace(wire)
+        aPrismVec = wp.wVec * length
+        tool = BRepPrimAPI_MakePrism(punchProfile.Shape(),
+                                       aPrismVec).Shape()
+        newPart = BRepAlgoAPI_Cut(workPart, tool).Shape()
+        uid = win.getNewPartUID(newPart, ancestor=wrkPrtUID)
+        win.statusBar().showMessage('Mill operation complete')
+        win.clearCallback()
+        win.redraw()
+    else:
+        win.registerCallback(millC)
+        win.lineEdit.setFocus()
+        statusText = "Enter milling depth for tool (Neg value for -W)"
+        win.statusBar().showMessage(statusText)
+
+def millC(shapeList, *args):
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        mill()
+
 def fillet(event=None):
     if (win.lineEditStack and win.edgeStack):
         text = win.lineEditStack.pop()
@@ -937,6 +968,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Create 3D', "Extrude", extrude)
     win.add_menu('Modify Active Part')
     win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
+    win.add_function_to_menu('Modify Active Part', "Mill", mill)
     win.add_function_to_menu('Modify Active Part', "Fillet", fillet)
     win.add_function_to_menu('Modify Active Part', "Shell", shell)
     win.add_function_to_menu('Modify Active Part', "Fuse", fuse)
