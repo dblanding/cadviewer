@@ -33,7 +33,7 @@ from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
                                      BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
 from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism,
-                                  BRepPrimAPI_MakeCylinder)
+                                  BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeRevol)
 from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
 from OCC.Core.gp import gp_Ax1, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCC.Core.TopAbs import TopAbs_EDGE
@@ -657,6 +657,33 @@ def extrudeC(shapeList, *args):
     if len(win.lineEditStack) == 2:
         extrude()
 
+def revolve():
+    """Revolve profile on active WP to create a new part."""
+    wp = win.activeWp
+    if win.lineEditStack:
+        name = win.lineEditStack.pop()
+        wire = wp.wire
+        if not wire:
+            print("Need 'makeWire' first.")
+            return
+        face = BRepBuilderAPI_MakeFace(wire).Shape()
+        revolve_axis = gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0))
+        revolved_shape = BRepPrimAPI_MakeRevol(face, revolve_axis).Shape()
+        uid = win.getNewPartUID(revolved_shape, name=name)
+        win.statusBar().showMessage('Revolved part created')
+        win.clearCallback()
+        win.redraw()
+    else:
+        win.registerCallback(revolveC)
+        win.lineEdit.setFocus()
+        statusText = "Enter name for revolved part."
+        win.statusBar().showMessage(statusText)
+
+def revolveC(shapeList, *args):
+    win.lineEdit.setFocus()
+    if win.lineEditStack:
+        revolve()
+
 #############################################
 #
 # 3D Geometry positioning functons
@@ -966,6 +993,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
     win.add_function_to_menu('Create 3D', "Make Wire", makeWire)
     win.add_function_to_menu('Create 3D', "Extrude", extrude)
+    win.add_function_to_menu('Create 3D', "Revolve", revolve)
     win.add_menu('Modify Active Part')
     win.add_function_to_menu('Modify Active Part', "Rotate Act Part", rotateAP)
     win.add_function_to_menu('Modify Active Part', "Mill", mill)
