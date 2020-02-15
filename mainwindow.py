@@ -644,7 +644,7 @@ class MainWindow(QMainWindow):
                     aisline.SetAttributes(drawer)
                     context.Display(aisline, False)  # (see comment below)
                     # 'False' above enables 'context' mode display & selection
-                pntlist = wp.intersectPts()
+                pntlist = wp.intersectPts()  # type <gp_Pnt>
                 for point in pntlist:
                     self.canva._display.DisplayShape(point)
                 for ccirc in wp.ccircs:

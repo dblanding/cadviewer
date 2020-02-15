@@ -29,13 +29,15 @@ from PyQt5.QtWidgets import QApplication, QMenu, QTreeWidgetItemIterator
 from PyQt5.QtGui import QIcon, QPixmap
 from OCC.Core.BRep import BRep_Tool
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
-from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
+                                     BRepBuilderAPI_MakeFace,
                                      BRepBuilderAPI_MakeWire)
 from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
 from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox, BRepPrimAPI_MakePrism,
                                   BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeRevol)
 from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
 from OCC.Core.gp import gp_Ax1, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCC.Core.TColgp import TColgp_Array1OfPnt
 from OCC.Core.TopAbs import TopAbs_EDGE
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopoDS import (TopoDS_Vertex, TopoDS_Edge,
@@ -630,6 +632,43 @@ def makeWireC(shapeList, *args):
     if win.lineEditStack:
         makeWire()
 
+def wireFromPnts():
+    """Make Wire from points, save to active wp."""
+    wp = win.activeWp
+    if win.lineEditStack:
+        _ = win.lineEditStack.pop()  # user trigger
+        pts = [BRep_Tool.Pnt(vrtx) for vrtx in win.ptStack
+               if isinstance(vrtx, TopoDS_Vertex)]
+        nbr = len(pts)
+        print(nbr)
+        print(type(pts[0]))
+        face_points = TColgp_Array1OfPnt(1, nbr)
+        win.ptStack = []
+        for n, i in enumerate(pts):
+            face_points.SetValue(n + 1, i)
+        wire = BRepBuilderAPI_MakeWire()
+        for i in range(1, nbr):
+            edge = BRepBuilderAPI_MakeEdge(face_points.Value(i),
+                                           face_points.Value(i + 1)).Edge()
+            wire.Add(edge)
+        wp.wire = wire.Wire()
+        statusText = "Wire complete."
+        win.statusBar().showMessage(statusText)
+        win.clearCallback()
+    else:
+        win.registerCallback(wireFromPntsC)
+        display.SetSelectionModeVertex()
+        win.lineEdit.setFocus()
+        statusText = "Select points in a loop, then press enter."
+        win.statusBar().showMessage(statusText)
+
+def wireFromPntsC(shapeList, *args):
+    for shape in shapeList:
+        win.ptStack.append(shape)
+        win.lineEdit.setFocus()
+    if win.lineEditStack:
+        wireFromPnts()
+
 def extrude():
     """Extrude profile on active WP to create a new part."""
     wp = win.activeWp
@@ -992,6 +1031,7 @@ if __name__ == '__main__':
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
     win.add_function_to_menu('Create 3D', "Make Wire", makeWire)
+    win.add_function_to_menu('Create 3D', "Make Wire from Pnts", wireFromPnts)
     win.add_function_to_menu('Create 3D', "Extrude", extrude)
     win.add_function_to_menu('Create 3D', "Revolve", revolve)
     win.add_menu('Modify Active Part')
