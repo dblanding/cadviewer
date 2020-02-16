@@ -597,8 +597,6 @@ class WorkPlane():
 
         # find intersection points among clines
         clList = list(self.clines) # list of (a, b, c) 2d lines
-        print(f"Number of c-lines: {len(clList)}")
-        print(clList)
         newpoints = []  # new finite points
         for i in range(len(clList)):
             line0 = clList.pop()
@@ -616,8 +614,6 @@ class WorkPlane():
                 points.add(pnt)
 
         # convert 2d points to 3d
-        print(f"Number of points: {len(points)}")
-        print(points)
         pntList = []
         for point in points:
             if point:  # exclude 'None' types

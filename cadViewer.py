@@ -65,7 +65,6 @@ print('TOLERANCE = ', TOL)
 def wpBy3Pts(*args):
     """Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
     Direction from pt2 to pt3 sets uDir."""
-    print(f'args = {args}')
     if win.ptStack:
         # Finish
         p3 = win.ptStack.pop()
@@ -92,7 +91,6 @@ def wpBy3Pts(*args):
         return
 
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
-    print(f'args = {args}')
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -126,10 +124,7 @@ def wpOnFace(*args):
 def wpOnFaceC(shapeList, *args):  # callback (collector) for wpOnFace
     if not shapeList:
         shapeList = []
-    print(shapeList)
-    print(args)
     for shape in shapeList:
-        print(type(shape))
         face = topods_Face(shape)
         win.faceStack.append(face)
     if len(win.faceStack) == 1:
@@ -153,7 +148,6 @@ def add_vertex_to_xyPtStack(shapeList):
     """Helper function to convert vertex to gp_Pnt and put on ptStack."""
     wp = win.activeWp
     for shape in shapeList:
-        print(f"Selected item is type: {shape}")
         if isinstance(shape, TopoDS_Vertex):  # Guard against wrong type
             vrtx = topods_Vertex(shape)
             pnt = BRep_Tool.Pnt(vrtx) # convert vertex to type <gp_Pnt>
@@ -661,7 +655,6 @@ def revolve():
         win.statusBar().showMessage(statusText)
 
 def revolveC(shapeList, *args):
-    print(f'args = {args}')
     for shape in shapeList:
         vrtx = topods_Vertex(shape)
         gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
@@ -752,8 +745,6 @@ def fillet(event=None):
         win.statusBar().showMessage(statusText)
 
 def filletC(shapeList, *args):  # callback (collector) for fillet
-    print(shapeList)
-    print(args)
     win.lineEdit.setFocus()
     for shape in shapeList:
         edge = topods_Edge(shape)
@@ -777,8 +768,6 @@ def fuse():
         win.statusBar().showMessage(statusText)
 
 def fuseC(shapeList, *args):  # callback (collector) for fuse
-    print(shapeList)
-    print(args)
     for shape in shapeList:
         win.shapeStack.append(shape)
     if win.shapeStack:
@@ -805,8 +794,6 @@ def shell(event=None):
         win.statusBar().showMessage(statusText)
 
 def shellC(shapeList, *args):  # callback (collector) for shell
-    print(shapeList)
-    print(args)
     win.lineEdit.setFocus()
     for shape in shapeList:
         face = topods_Face(shape)
