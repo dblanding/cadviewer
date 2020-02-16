@@ -638,28 +638,42 @@ def extrudeC(shapeList, *args):
 def revolve():
     """Revolve profile on active WP to create a new part."""
     wp = win.activeWp
-    if win.lineEditStack:
+    if win.lineEditStack and len(win.ptStack) == 2:
+        p2 = win.ptStack.pop()
+        p1 = win.ptStack.pop()
         name = win.lineEditStack.pop()
+        win.clearAllStacks()
         wireOK = wp.makeWire()
         if not wireOK:
             print("Unable to make wire.")
             return
         face = BRepBuilderAPI_MakeFace(wp.wire).Shape()
-        revolve_axis = gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0))
+        revolve_axis = gp_Ax1(p1, gp_Dir(gp_Vec(p1, p2)))
         revolved_shape = BRepPrimAPI_MakeRevol(face, revolve_axis).Shape()
         uid = win.getNewPartUID(revolved_shape, name=name)
-        win.statusBar().showMessage('Revolved part created')
+        win.statusBar().showMessage('New part created.')
         win.clearCallback()
         win.redraw()
     else:
         win.registerCallback(revolveC)
         win.lineEdit.setFocus()
-        statusText = "Enter name for revolved part."
+        statusText = "Pick two points on revolve axis."
         win.statusBar().showMessage(statusText)
 
 def revolveC(shapeList, *args):
+    print(f'args = {args}')
+    for shape in shapeList:
+        vrtx = topods_Vertex(shape)
+        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+        win.ptStack.append(gpPt)
+    if len(win.ptStack) == 1:
+        statusText = "Select 2nd point on revolve axis."
+        win.statusBar().showMessage(statusText)
+    elif len(win.ptStack) == 2 and not win.lineEditStack:
+        statusText = "Enter part name."
+        win.statusBar().showMessage(statusText)
     win.lineEdit.setFocus()
-    if win.lineEditStack:
+    if win.lineEditStack and len(win.ptStack) == 2:
         revolve()
 
 #############################################
