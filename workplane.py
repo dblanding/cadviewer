@@ -34,6 +34,7 @@ from OCC.Core.gp import (gp_Ax2, gp_Ax3, gp_Dir, gp_Dir2d, gp_Lin2d, gp_Pnt,
                          gp_Pnt2d, gp_Ax2d, gp_Circ2d, gp_Pln, gp_Trsf, gp_Vec)
 from OCC.Core.GProp import GProp_GProps
 from OCCUtils.Construct import face_normal
+from OCC.Core.TopTools import TopTools_ListOfShape
 
 INFINITY = 1e+10  # mm (on the order of Earth's diameter)
 
@@ -728,6 +729,15 @@ class WorkPlane():
     #=======================================================================
 
     def makeWire(self):
-        """Generate and return a wire from the edges in self.edgeList"""
-        self.wire = BRepBuilderAPI_MakeWire(*self.edgeList).Wire()
-        return self.wire
+        """Generate a wire from the edges in self.edgeList."""
+        wireBldr = BRepBuilderAPI_MakeWire()
+        occ_seq = TopTools_ListOfShape()
+        for edge in self.edgeList:
+            occ_seq.Append(edge)
+        wireBldr.Add(occ_seq)
+        if wireBldr.IsDone():
+            self.wire = wireBldr.Wire()
+            status = True
+        else:
+            status = False
+        return status

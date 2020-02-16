@@ -608,81 +608,17 @@ def makeCyl():
     uid = win.getNewPartUID(myBody, name=name)
     win.redraw()
 
-def makeWire():
-    """Collect (up to 4) edges, make Wire, save to active wp."""
-    wp = win.activeWp
-    if win.lineEditStack:
-        _ = win.lineEditStack.pop()  # user trigger
-        edgelist = [edge for edge in win.shapeStack
-                    if isinstance(edge, TopoDS_Edge)]
-        win.shapeStack = []
-        if len(edgelist) > 4:
-            edgelist = edgelist[:4]
-        wp.wire = BRepBuilderAPI_MakeWire(*edgelist).Wire()
-        statusText = "Wire complete."
-        win.statusBar().showMessage(statusText)
-        win.clearCallback()
-    else:
-        win.registerCallback(makeWireC)
-        win.lineEdit.setFocus()
-        statusText = "Select up to 4 edges in a loop, then press enter."
-        win.statusBar().showMessage(statusText)
-
-def makeWireC(shapeList, *args):
-    for shape in shapeList:
-        win.shapeStack.append(shape)
-        win.lineEdit.setFocus()
-    if win.lineEditStack:
-        makeWire()
-
-def wireFromPnts():
-    """Make Wire from points, save to active wp."""
-    wp = win.activeWp
-    if win.lineEditStack:
-        _ = win.lineEditStack.pop()  # user trigger
-        pts = [BRep_Tool.Pnt(vrtx) for vrtx in win.ptStack
-               if isinstance(vrtx, TopoDS_Vertex)]
-        nbr = len(pts)
-        print(nbr)
-        print(type(pts[0]))
-        face_points = TColgp_Array1OfPnt(1, nbr)
-        win.ptStack = []
-        for n, i in enumerate(pts):
-            face_points.SetValue(n + 1, i)
-        wire = BRepBuilderAPI_MakeWire()
-        for i in range(1, nbr):
-            edge = BRepBuilderAPI_MakeEdge(face_points.Value(i),
-                                           face_points.Value(i + 1)).Edge()
-            wire.Add(edge)
-        wp.wire = wire.Wire()
-        statusText = "Wire complete."
-        win.statusBar().showMessage(statusText)
-        win.clearCallback()
-    else:
-        win.registerCallback(wireFromPntsC)
-        display.SetSelectionModeVertex()
-        win.lineEdit.setFocus()
-        statusText = "Select points in a loop, then press enter."
-        win.statusBar().showMessage(statusText)
-
-def wireFromPntsC(shapeList, *args):
-    for shape in shapeList:
-        win.ptStack.append(shape)
-        win.lineEdit.setFocus()
-    if win.lineEditStack:
-        wireFromPnts()
-
 def extrude():
     """Extrude profile on active WP to create a new part."""
     wp = win.activeWp
     if len(win.lineEditStack) == 2:
         name = win.lineEditStack.pop()
         length = float(win.lineEditStack.pop()) * win.unitscale
-        wire = wp.wire
-        if not wire:
-            print("Need 'makeWire' first.")
+        wireOK = wp.makeWire()
+        if not wireOK:
+            print("Unable to make wire.")
             return
-        myFaceProfile = BRepBuilderAPI_MakeFace(wire)
+        myFaceProfile = BRepBuilderAPI_MakeFace(wp.wire)
         aPrismVec = wp.wVec * length
         myBody = BRepPrimAPI_MakePrism(myFaceProfile.Shape(),
                                        aPrismVec).Shape()
@@ -704,11 +640,11 @@ def revolve():
     wp = win.activeWp
     if win.lineEditStack:
         name = win.lineEditStack.pop()
-        wire = wp.wire
-        if not wire:
-            print("Need 'makeWire' first.")
+        wireOK = wp.makeWire()
+        if not wireOK:
+            print("Unable to make wire.")
             return
-        face = BRepBuilderAPI_MakeFace(wire).Shape()
+        face = BRepBuilderAPI_MakeFace(wp.wire).Shape()
         revolve_axis = gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0))
         revolved_shape = BRepPrimAPI_MakeRevol(face, revolve_axis).Shape()
         uid = win.getNewPartUID(revolved_shape, name=name)
@@ -1033,8 +969,6 @@ if __name__ == '__main__':
     win.add_menu('Create 3D')
     win.add_function_to_menu('Create 3D', "Box", makeBox)
     win.add_function_to_menu('Create 3D', "Cylinder", makeCyl)
-    win.add_function_to_menu('Create 3D', "Make Wire", makeWire)
-    win.add_function_to_menu('Create 3D', "Make Wire from Pnts", wireFromPnts)
     win.add_function_to_menu('Create 3D', "Extrude", extrude)
     win.add_function_to_menu('Create 3D', "Revolve", revolve)
     win.add_menu('Modify Active Part')
