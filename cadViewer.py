@@ -66,11 +66,11 @@ def wpBy3Pts(*args):
     """Direction from pt1 to pt2 sets wDir, pt2 is wpOrigin.
     Direction from pt2 to pt3 sets uDir."""
     print(f'args = {args}')
-    if win.xyPtStack:
+    if win.ptStack:
         # Finish
-        p3 = win.xyPtStack.pop()
-        p2 = win.xyPtStack.pop()
-        p1 = win.xyPtStack.pop()
+        p3 = win.ptStack.pop()
+        p2 = win.ptStack.pop()
+        p1 = win.ptStack.pop()
         wVec = gp_Vec(p1, p2)
         wDir = gp_Dir(wVec)
         origin = p2
@@ -93,14 +93,15 @@ def wpBy3Pts(*args):
 
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     print(f'args = {args}')
-    add_vertex_to_xyPtStack(shapeList)
-    if len(win.xyPtStack) == 1:
+    for vrtx in shapeList:
+        win.ptStack.append(vrtx)
+    if len(win.ptStack) == 1:
         statusText = "Now select point 2 (wp origin)."
         win.statusBar().showMessage(statusText)
-    elif len(win.xyPtStack) == 2:
+    elif len(win.ptStack) == 2:
         statusText = "Now select point 3 to set uDir."
         win.statusBar().showMessage(statusText)
-    elif len(win.xyPtStack) == 3:
+    elif len(win.ptStack) == 3:
         wpBy3Pts()
 
 def wpOnFace(*args):
