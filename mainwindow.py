@@ -209,7 +209,7 @@ class MainWindow(QMainWindow):
         self.drawList = []      # list of part uid's to be displayed
         self.floatStack = []    # storage stack for floating point values
         self.xyPtStack = []     # storage stack for 2d points (x, y)
-        self.ptStack = []       # used when measuring pt to pt dist
+        self.ptStack = []       # storage stack for gp_Pnts
         self.edgeStack = []     # storage stack for edge picks
         self.faceStack = []     # storage stack for face picks
         self.shapeStack = []    # storage stack for shape picks

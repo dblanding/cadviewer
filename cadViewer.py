@@ -93,8 +93,10 @@ def wpBy3Pts(*args):
 
 def wpBy3PtsC(shapeList, *args):  # callback (collector) for wpBy3Pts
     print(f'args = {args}')
-    for vrtx in shapeList:
-        win.ptStack.append(vrtx)
+    for shape in shapeList:
+        vrtx = topods_Vertex(shape)
+        gpPt = BRep_Tool.Pnt(vrtx) # convert vertex to gp_Pnt
+        win.ptStack.append(gpPt)
     if len(win.ptStack) == 1:
         statusText = "Now select point 2 (wp origin)."
         win.statusBar().showMessage(statusText)
